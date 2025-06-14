@@ -55,22 +55,27 @@ class MyApp extends StatelessWidget {
     // Retrieves the default theme for the platform
     //TextTheme textTheme = Theme.of(context).textTheme;
 
-    // Use with Google Fonts package to use downloadable fonts
-    TextTheme textTheme = createTextTheme(context, "Noto Sans", "Noto Sans");
-
     return MaterialApp(
       title: 'librarian',
       theme: ThemeData(
-        brightness: brightness,
+        // brightness: brightness,
         useMaterial3: true,
         // ライトモード固定
         // colorScheme: brightness == Brightness.light
         //     ? MaterialTheme.lightScheme()
         //     : MaterialTheme.darkScheme(),
         colorScheme: MaterialTheme.lightScheme(),
-        textTheme: textTheme,
+        fontFamily: 'NotoSansJP',
+
+        textTheme: const TextTheme(
+          displayLarge: TextStyle(fontFamily: 'NotoSansJP'),
+        )
+
       ),
       home: const BottomNavigation(),
+      // supportedLocales: const [
+      //   Locale('ja', 'JP'),
+      // ],
     );
   }
 }
@@ -86,13 +91,12 @@ class BottomNavigation extends StatelessWidget {
       const OptionScreen(),
       const LinksScreen(),
     ];
-    final bottomNavigationBar =
-        Provider.of<BottomNavigatorBarProvider>(context);
+    final bottomNavigationBar = Provider.of<BottomNavigatorBarProvider>(context);
 
     // ダイアログが出ない。要修正
     return PopScope(
         canPop: false,
-        onPopInvokedWithResult: (bool didPop, dynamic result) async{
+        onPopInvokedWithResult: (bool didPop, dynamic result) async {
           if (didPop) {
             AlertDialog(
               title: const Text('終了しますか？'),
@@ -109,36 +113,23 @@ class BottomNavigation extends StatelessWidget {
             );
             return;
           }
-
         },
         child: Scaffold(
-          body: screen[bottomNavigationBar.currentIndex],
+          body: SafeArea(child: screen[bottomNavigationBar.currentIndex]),
           bottomNavigationBar: NavigationBar(
               height: 72,
               labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
               onDestinationSelected: (int index) {
                 bottomNavigationBar.currentIndex = index;
               },
+
               indicatorColor: Theme.of(context).colorScheme.primaryFixed,
               selectedIndex: bottomNavigationBar.currentIndex,
               destinations: const <Widget>[
-                NavigationDestination(
-                  selectedIcon: Icon(Icons.grid_on),
-                  icon: Icon(Icons.grid_on_outlined),
-                  label: 'マイデッキ',
-                ),
-                NavigationDestination(
-                    selectedIcon: Icon(Icons.sim_card),
-                    icon: Icon(Icons.sim_card_outlined),
-                    label: 'カード検索'),
-                NavigationDestination(
-                    selectedIcon: Icon(Icons.settings),
-                    icon: Icon(Icons.settings_outlined),
-                    label: '設定'),
-                NavigationDestination(
-                    selectedIcon: Icon(Icons.language_sharp),
-                    icon: Icon(Icons.language_outlined),
-                    label: 'リンク'),
+                NavigationDestination(selectedIcon: Icon(Icons.widgets), icon: Icon(Icons.widgets_outlined), label: 'マイデッキ'),
+                NavigationDestination(selectedIcon: Icon(Icons.sim_card), icon: Icon(Icons.sim_card_outlined), label: 'カード検索'),
+                NavigationDestination(selectedIcon: Icon(Icons.settings), icon: Icon(Icons.settings_outlined), label: '設定'),
+                NavigationDestination(selectedIcon: Icon(Icons.language_sharp), icon: Icon(Icons.language_outlined), label: 'リンク'),
               ]),
         ));
   }

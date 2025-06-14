@@ -33,7 +33,7 @@ class LinksScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(10)
                         )
                     ),
-                    child: const Text('デュエル・マスターズ 公式サイト！')
+                    child: const Text('デュエル・マスターズ 公式サイト')
                 ),
               ),
               Container(
@@ -47,7 +47,7 @@ class LinksScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(10)
                         )
                     ),
-                    child: const Text('デュエチューブ Youtube公式チャンネル！')
+                    child: const Text('デュエチューブ Youtube公式チャンネル')
                 ),
               ),
               Container(
@@ -61,7 +61,7 @@ class LinksScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(10)
                         )
                     ),
-                    child: const Text('デュエル・マスターズ Twitter公式アカウント！')
+                    child: const Text('デュエル・マスターズ Twitter公式アカウント')
                 ),
               ),
               Container(
@@ -75,7 +75,7 @@ class LinksScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10)
                         )
                       ),
-                      child: const Text('DMPランキング！')
+                      child: const Text('DMPランキング')
                 ),
               ),
             ],

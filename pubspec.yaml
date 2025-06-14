@@ -38,6 +38,7 @@ dependencies:
   backdrop: ^0.9.1
   permission_handler: ^11.3.1
   provider: ^6.1.2
+  flutter_riverpod: ^2.6.1
   cached_network_image: ^3.4.1
   flutter_slidable: ^4.0.0
   flutter_speed_dial: ^7.0.0
@@ -93,10 +94,14 @@ flutter:
   # "family" key with the font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   # example:
-  # fonts:
-  #   - family: Schyler
-  #     fonts:
-  #       - asset: fonts/Schyler-Regular.ttf
+  fonts:
+     - family: NotoSanSJP
+       fonts:
+         - asset: assets/fonts/NotoSansJP-Regular.ttf
+         - asset: assets/fonts/NotoSansJP-Bold.ttf
+           weight: 700
+         - asset: assets/fonts/NotoSansJP-Light.ttf
+           weight: 300
   #       - asset: fonts/Schyler-Italic.ttf
   #         style: italic
   #   - family: Trajan Pro

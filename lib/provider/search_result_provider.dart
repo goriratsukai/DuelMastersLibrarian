@@ -39,6 +39,11 @@ class SearchResultsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void resetAll(){
+    // 何か増えたら追加する
+    notifyListeners();
+  }
+
   void setResults(List<Map<String, dynamic>> results) {
     _results = List.generate(results.length, (i) {
       final row = results[i];

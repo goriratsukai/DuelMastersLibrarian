@@ -43,6 +43,16 @@ class SearchParamProvider extends ChangeNotifier {
    */
   bool _sameName = true;
 
+  /*
+   * あいまい検索フラグ
+   */
+  bool _fuzzySearch = true;
+
+  /*
+   * 検索結果ソート順
+   */
+  int _sort = 0;
+
   // カード検索用クエリ
 
   // UI用getter
@@ -96,21 +106,41 @@ class SearchParamProvider extends ChangeNotifier {
 
   get sameName => _sameName;
 
+  get fuzzySearch => _fuzzySearch;
+
+  get sort => _sort;
+
   // setter
   void setRace(String race) {
+    if (race == _race) {
+      return;
+    }
     _race = race;
+    notifyListeners();
   }
 
   void setType(String type) {
+    if (type == _type) {
+      return;
+    }
     _type = type;
+    notifyListeners();
   }
 
   void setText(String text) {
+    if (text == _text) {
+      return;
+    }
     _text = text;
+    notifyListeners();
   }
 
   void setName(String name) {
+    if (name == _name) {
+      return;
+    }
     _name = name;
+    notifyListeners();
   }
 
   void resetName() {
@@ -122,31 +152,53 @@ class SearchParamProvider extends ChangeNotifier {
   }
 
   void setCostMin(String cost) {
+    if(cost == _costMin){
+      return;
+    }
     _costMin = cost;
+    notifyListeners();
   }
 
   void setCostMax(String cost) {
+    if(cost == _costMax){
+      return;
+    }
     _costMax = cost;
+    notifyListeners();
   }
 
   void setPowerMin(String power) {
+    if(power == _powerMin){
+      return;
+    }
     _powerMin = power;
+    notifyListeners();
   }
 
   void setPowerMax(String power) {
+    if(power == _powerMax){
+      return;
+    }
     _powerMax = power;
+    notifyListeners();
   }
 
   void checkCivilsValid() {
     _checkCivils = _civil1[2] &
-        _civil2[2] &
-        _civil3[2] &
-        _civil4[2] &
-        _civil5[2] &
-        _civil6[2];
+    _civil2[2] &
+    _civil3[2] &
+    _civil4[2] &
+    _civil5[2] &
+    _civil6[2];
   }
 
   void setCivilSearchUnit(int index) {
+    // 現在値を同じインデックスのとき何もしない
+    if(index == 0 && _civilSearchUnit[0]){
+      return;
+    } else if(index == 1 && _civilSearchUnit[1]){
+      return;
+    }
     _civilSearchUnit = [false, false];
     _civilSearchUnit[index] = true;
     notifyListeners();
@@ -165,6 +217,19 @@ class SearchParamProvider extends ChangeNotifier {
   }
 
   void setCivil1(int index) {
+    if (index == 0 && _civil1[0]) {
+      _civil1 = [false, true, false];
+      checkCivilsValid();
+      notifyListeners();
+      return;
+    } else if (index == 2 && _civil1[2]) {
+      _civil1 = [false, true, false];
+      checkCivilsValid();
+      notifyListeners();
+      return;
+    } else if (index == 1 && _civil1[1]) {
+      return;
+    }
     _civil1 = [false, false, false];
     _civil1[index] = true;
     checkCivilsValid();
@@ -172,6 +237,19 @@ class SearchParamProvider extends ChangeNotifier {
   }
 
   void setCivil2(int index) {
+    if (index == 0 && _civil2[0]) {
+      _civil2 = [false, true, false];
+      checkCivilsValid();
+      notifyListeners();
+      return;
+    } else if (index == 2 && _civil2[2]) {
+      _civil2 = [false, true, false];
+      checkCivilsValid();
+      notifyListeners();
+      return;
+    } else if (index == 1 && _civil2[1]) {
+      return;
+    }
     _civil2 = [false, false, false];
     _civil2[index] = true;
     checkCivilsValid();
@@ -179,6 +257,19 @@ class SearchParamProvider extends ChangeNotifier {
   }
 
   void setCivil3(int index) {
+    if (index == 0 && _civil3[0]) {
+      _civil3 = [false, true, false];
+      checkCivilsValid();
+      notifyListeners();
+      return;
+    } else if (index == 2 && _civil3[2]) {
+      _civil3 = [false, true, false];
+      checkCivilsValid();
+      notifyListeners();
+      return;
+    } else if (index == 1 && _civil3[1]) {
+      return;
+    }
     _civil3 = [false, false, false];
     _civil3[index] = true;
     checkCivilsValid();
@@ -186,6 +277,19 @@ class SearchParamProvider extends ChangeNotifier {
   }
 
   void setCivil4(int index) {
+    if (index == 0 && _civil4[0]) {
+      _civil4 = [false, true, false];
+      checkCivilsValid();
+      notifyListeners();
+      return;
+    } else if (index == 2 && _civil4[2]) {
+      _civil4 = [false, true, false];
+      checkCivilsValid();
+      notifyListeners();
+      return;
+    } else if (index == 1 && _civil4[1]) {
+      return;
+    }
     _civil4 = [false, false, false];
     _civil4[index] = true;
     checkCivilsValid();
@@ -193,6 +297,19 @@ class SearchParamProvider extends ChangeNotifier {
   }
 
   void setCivil5(int index) {
+    if (index == 0 && _civil5[0]) {
+      _civil5 = [false, true, false];
+      checkCivilsValid();
+      notifyListeners();
+      return;
+    } else if (index == 2 && _civil5[2]) {
+      _civil5 = [false, true, false];
+      checkCivilsValid();
+      notifyListeners();
+      return;
+    } else if (index == 1 && _civil5[1]) {
+      return;
+    }
     _civil5 = [false, false, false];
     _civil5[index] = true;
     checkCivilsValid();
@@ -200,6 +317,19 @@ class SearchParamProvider extends ChangeNotifier {
   }
 
   void setCivil6(int index) {
+    if (index == 0 && _civil6[0]) {
+      _civil6 = [false, true, false];
+      checkCivilsValid();
+      notifyListeners();
+      return;
+    } else if (index == 2 && _civil6[2]) {
+      _civil6 = [false, true, false];
+      checkCivilsValid();
+      notifyListeners();
+      return;
+    } else if (index == 1 && _civil6[1]) {
+      return;
+    }
     _civil6 = [false, false, false];
     _civil6[index] = true;
     checkCivilsValid();
@@ -252,6 +382,16 @@ class SearchParamProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setFuzzySearch(bool fuzzySearch) {
+    _fuzzySearch = fuzzySearch;
+    notifyListeners();
+  }
+
+  void setSort(int sort){
+    _sort = sort;
+    notifyListeners();
+  }
+
   // 検索用パラメータ
   String getQuery() {
     if (_name == '今日のカード') {
@@ -281,7 +421,10 @@ class SearchParamProvider extends ChangeNotifier {
       return querySelectToday;
     }
     String querySelect = '''
-    select co.object_id object_id, card_name, cp.image_name image_name
+select card.object_id object_id, card.card_name card_name, cp.image_name image_name
+from
+(
+select co.object_id object_id, card_name
 from card_module cm
 
 join link_object_module lom
@@ -293,31 +436,30 @@ on lom.object_id = co.object_id
 join link_module_race lmr
 on lmr.module_id = cm.module_id
 
-join master_race mr
-on mr.race_id = lmr.race_id
-
-join ${getSameNameFlag()} cp
-on co.object_id = cp.object_id
-
 where cm.card_name like '%${getName()}%'
-and   mr.race like '%${getRace()}%'
 and   cm.card_type like '%${getType()}%'
 and   cm.ability_text like '%${getText()}%'
+and   lmr.race_id in(select race_id from master_race where race like '%${getRace()}%')
 
 ${getCostMin()}
 ${getCostMax()}
 ${getPowerMin()}
 ${getPowerMax()}
 
-and   ${getCivilSearchUnit()}.civil1 ${getCivil1()}
-and   ${getCivilSearchUnit()}.civil2 ${getCivil2()}
-and   ${getCivilSearchUnit()}.civil3 ${getCivil3()}
-and   ${getCivilSearchUnit()}.civil4 ${getCivil4()}
-and   ${getCivilSearchUnit()}.civil5 ${getCivil5()}
-and   ${getCivilSearchUnit()}.civil6 ${getCivil6()}
+${getCivil1()}
+${getCivil2()}
+${getCivil3()}
+${getCivil4()}
+${getCivil5()}
+${getCivil6()}
 
-group by co.object_id, cp.physical_id
-order by co.object_id desc
+group by co.object_id
+)card
+
+join ${getSameNameFlag()} cp
+on card.object_id = cp.object_id
+
+order by card.object_id desc
 ;
     ''';
     return querySelect;
@@ -325,9 +467,12 @@ order by co.object_id desc
 
   // getter for query
   String getName() {
-    // 各文字の間に%を挿入
-    List<String> symbols = _name.split('');
-    return symbols.join('%');
+    if (_fuzzySearch ==true) {
+      // あいまい検索が有効なとき、各文字の間に%を挿入
+      List<String> symbols = _name.split('');
+      return symbols.join('%');
+    }
+    return _name;
   }
 
   String getRace() {
@@ -344,17 +489,17 @@ order by co.object_id desc
 
   String getCostMin() {
     if (_costMin == '') {
-      return 'and cm.cost >= 0';
+      return ' and cm.cost >= 0';
     } else {
-      return 'and   cm.cost >= $_costMin';
+      return ' and   cm.cost >= $_costMin';
     }
   }
 
   String getCostMax() {
     if (_costMax == '') {
-      return 'and cm.cost <= cast(1e999 as real)';
+      return ' and cm.cost <= cast(1e999 as real)';
     } else {
-      return 'and   cm.cost <= $_costMax';
+      return ' and   cm.cost <= $_costMax';
     }
   }
 
@@ -362,7 +507,7 @@ order by co.object_id desc
     if (_powerMin == '') {
       return '';
     } else {
-      return 'and cm.power >=$_powerMin';
+      return ' and cm.power >=$_powerMin';
     }
   }
 
@@ -370,20 +515,20 @@ order by co.object_id desc
     if (_powerMax == '') {
       return '';
     } else {
-      return 'and cm.power <= $_powerMax';
+      return ' and cm.power <= $_powerMax';
     }
   }
 
   String getSameNameFlag() {
     if (_sameName) {
-      return 'card_physical';
+      return ' card_physical';
     } else {
       return '(select * from card_physical where primary_flag = 1)';
     }
   }
 
-  String getCivil(){
-    if(_civil1[0] && _civil2[0] && _civil3[0] && _civil4[0] && _civil5[0] && _civil6[0]){
+  String getCivil() {
+    if (_civil1[0] && _civil2[0] && _civil3[0] && _civil4[0] && _civil5[0] && _civil6[0]) {
       return '';
     } else {
       return 'and';
@@ -392,69 +537,69 @@ order by co.object_id desc
 
   String getCivil1() {
     if (_civil1[0]) {
-      return '=1';
+      return ' and ${getCivilSearchUnit()}.civil1 =1';
     } else if (_civil1[1]) {
-      return 'in (1,0)';
+      return '';
     } else {
-      return '=0';
+      return ' and ${getCivilSearchUnit()}.civil1 =0';
     }
   }
 
   String getCivil2() {
     if (_civil2[0]) {
-      return '=1';
+      return ' and ${getCivilSearchUnit()}.civil2 =1';
     } else if (_civil2[1]) {
-      return 'in (1,0)';
+      return '';
     } else {
-      return '=0';
+      return ' and ${getCivilSearchUnit()}.civil2 =0';
     }
   }
 
   String getCivil3() {
     if (_civil3[0]) {
-      return '=1';
+      return ' and   ${getCivilSearchUnit()}.civil3 =1';
     } else if (_civil3[1]) {
-      return 'in (1,0)';
+      return '';
     } else {
-      return '=0';
+      return ' and   ${getCivilSearchUnit()}.civil3 =0';
     }
   }
 
   String getCivil4() {
     if (_civil4[0]) {
-      return '=1';
+      return ' and   ${getCivilSearchUnit()}.civil4 =1';
     } else if (_civil4[1]) {
-      return 'in (1,0)';
+      return '';
     } else {
-      return '=0';
+      return ' and   ${getCivilSearchUnit()}.civil4 =0';
     }
   }
 
   String getCivil5() {
     if (_civil5[0]) {
-      return '=1';
+      return ' and   ${getCivilSearchUnit()}.civil5 =1';
     } else if (_civil5[1]) {
-      return 'in (1,0)';
+      return '';
     } else {
-      return '=0';
+      return ' and   ${getCivilSearchUnit()}.civil5 =0';
     }
   }
 
   String getCivil6() {
     if (_civil6[0]) {
-      return '=1';
+      return ' and   ${getCivilSearchUnit()}.civil6 =1';
     } else if (_civil6[1]) {
-      return 'in (1,0)';
+      return '';
     } else {
-      return '=0';
+      return ' and   ${getCivilSearchUnit()}.civil6 =0';
     }
   }
 
   String getCivilSearchUnit() {
     if (_civilSearchUnit[0]) {
-      return 'co';
+      return ' co';
     } else {
-      return 'cm';
+      return ' cm';
     }
   }
 }

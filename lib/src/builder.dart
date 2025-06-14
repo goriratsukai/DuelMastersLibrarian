@@ -232,7 +232,6 @@ class BuildDeckScreen extends StatelessWidget {
                         VoidCallback closeContainer,) {
                       return SearchField(
                         context: context,
-                        searchFunc: searchResults.search_name,
                       );
                     },
                   ),
