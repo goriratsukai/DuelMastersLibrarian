@@ -1,605 +1,399 @@
 import 'package:flutter/material.dart';
-import 'package:dml/source/card_data.dart';
+import 'package:riverpod/riverpod.dart';
 
-class SearchParamProvider extends ChangeNotifier {
-  // 文字入力系
-  String _name = "";
-  String _race = "";
-  String _type = "";
-  String _text = "";
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _raceController = TextEditingController();
-  final TextEditingController _typeController = TextEditingController();
-  final TextEditingController _textController = TextEditingController();
+@immutable
+class SearchParamState {
+  const SearchParamState({
+    this.name = '',
+    this.race = '',
+    this.type = '',
+    this.text = '',
+    this.costMin = '',
+    this.costMax = '',
+    this.powerMin = '',
+    this.powerMax = '',
+    this.civilSearchUnit = const [true, false],
+    this.civil1 = const [false, true, false],
+    this.civil2 = const [false, true, false],
+    this.civil3 = const [false, true, false],
+    this.civil4 = const [false, true, false],
+    this.civil5 = const [false, true, false],
+    this.civil6 = const [false, true, false],
+    this.checkCivils = false,
+    this.sameName = true,
+    this.fuzzySearch = true,
+    this.sort = 0,
+  });
 
-  // 数字系
-  String _costMin = '';
-  String _costMax = '';
-  String _powerMin = '';
-  String _powerMax = '';
-  final TextEditingController _costMinController = TextEditingController();
-  final TextEditingController _costMaxController = TextEditingController();
-  final TextEditingController _powerMinController = TextEditingController();
-  final TextEditingController _powerMaxController = TextEditingController();
+  final String name;
+  final String race;
+  final String type;
+  final String text;
+  final String costMin;
+  final String costMax;
+  final String powerMin;
+  final String powerMax;
+  final List<bool> civilSearchUnit;
+  final List<bool> civil1;
+  final List<bool> civil2;
+  final List<bool> civil3;
+  final List<bool> civil4;
+  final List<bool> civil5;
+  final List<bool> civil6;
+  final bool checkCivils;
+  final bool sameName;
+  final bool fuzzySearch;
+  final int sort;
 
-  /* 文明の検索単位
-   * 0=>カード、1=>名前
-   */
-  List<bool> _civilSearchUnit = [true, false];
-
-  /* 文明のセレクター
-   * 0=>必須、1=>任意、2=>不要
-   */
-  List<bool> _civil1 = [false, true, false];
-  List<bool> _civil2 = [false, true, false];
-  List<bool> _civil3 = [false, true, false];
-  List<bool> _civil4 = [false, true, false];
-  List<bool> _civil5 = [false, true, false];
-  List<bool> _civil6 = [false, true, false];
-  bool _checkCivils = false;
-
-  /*
-   * 同名カードフラグ
-   */
-  bool _sameName = true;
-
-  /*
-   * あいまい検索フラグ
-   */
-  bool _fuzzySearch = true;
-
-  /*
-   * 検索結果ソート順
-   */
-  int _sort = 0;
-
-  // カード検索用クエリ
-
-  // UI用getter
-  get name => _name;
-
-  get race => _race;
-
-  get type => _type;
-
-  get text => _text;
-
-  get nameController => _nameController;
-
-  get raceController => _raceController;
-
-  get typeController => _typeController;
-
-  get textController => _textController;
-
-  get costMin => _costMin;
-
-  get costMax => _costMax;
-
-  get powerMin => _powerMin;
-
-  get powerMax => _powerMax;
-
-  get costMinController => _costMinController;
-
-  get costMaxController => _costMaxController;
-
-  get powerMinController => _powerMinController;
-
-  get powerMaxController => _powerMaxController;
-
-  get checkCivils => _checkCivils;
-
-  get civilSearchUnit => _civilSearchUnit;
-
-  get civil1 => _civil1;
-
-  get civil2 => _civil2;
-
-  get civil3 => _civil3;
-
-  get civil4 => _civil4;
-
-  get civil5 => _civil5;
-
-  get civil6 => _civil6;
-
-  get sameName => _sameName;
-
-  get fuzzySearch => _fuzzySearch;
-
-  get sort => _sort;
-
-  // setter
-  void setRace(String race) {
-    if (race == _race) {
-      return;
-    }
-    _race = race;
-    notifyListeners();
+  SearchParamState copyWith({
+    String? name,
+    String? race,
+    String? type,
+    String? text,
+    String? costMin,
+    String? costMax,
+    String? powerMin,
+    String? powerMax,
+    List<bool>? civilSearchUnit,
+    List<bool>? civil1,
+    List<bool>? civil2,
+    List<bool>? civil3,
+    List<bool>? civil4,
+    List<bool>? civil5,
+    List<bool>? civil6,
+    bool? checkCivils,
+    bool? sameName,
+    bool? fuzzySearch,
+    int? sort,
+  }) {
+    return SearchParamState(
+      name: name ?? this.name,
+      race: race ?? this.race,
+      type: type ?? this.type,
+      text: text ?? this.text,
+      costMin: costMin ?? this.costMin,
+      costMax: costMax ?? this.costMax,
+      powerMin: powerMin ?? this.powerMin,
+      powerMax: powerMax ?? this.powerMax,
+      civilSearchUnit: civilSearchUnit ?? this.civilSearchUnit,
+      civil1: civil1 ?? this.civil1,
+      civil2: civil2 ?? this.civil2,
+      civil3: civil3 ?? this.civil3,
+      civil4: civil4 ?? this.civil4,
+      civil5: civil5 ?? this.civil5,
+      civil6: civil6 ?? this.civil6,
+      checkCivils: checkCivils ?? this.checkCivils,
+      sameName: sameName ?? this.sameName,
+      fuzzySearch: fuzzySearch ?? this.fuzzySearch,
+      sort: sort ?? this.sort,
+    );
   }
+}
 
-  void setType(String type) {
-    if (type == _type) {
-      return;
-    }
-    _type = type;
-    notifyListeners();
+// NotifierProviderで管理するProvider
+class SearchParamNotifier extends Notifier<SearchParamState> {
+  @override
+  SearchParamState build() {
+    return const SearchParamState(); // 初期状態
   }
-
-  void setText(String text) {
-    if (text == _text) {
-      return;
-    }
-    _text = text;
-    notifyListeners();
-  }
-
   void setName(String name) {
-    if (name == _name) {
-      return;
-    }
-    _name = name;
-    notifyListeners();
+    state = state.copyWith(name: name);
   }
-
-  void resetName() {
-    if (_name != '') {
-      _name = '';
-      _nameController.text = _name;
-      notifyListeners();
-    }
+  void setRace(String race) {
+    state = state.copyWith(race: race);
   }
-
-  void setCostMin(String cost) {
-    if(cost == _costMin){
-      return;
-    }
-    _costMin = cost;
-    notifyListeners();
+  void setType(String type) {
+    state = state.copyWith(type: type);
   }
-
-  void setCostMax(String cost) {
-    if(cost == _costMax){
-      return;
-    }
-    _costMax = cost;
-    notifyListeners();
+  void setText(String text) {
+    state = state.copyWith(text: text);
   }
-
-  void setPowerMin(String power) {
-    if(power == _powerMin){
-      return;
-    }
-    _powerMin = power;
-    notifyListeners();
+  void setCostMin(String costMin) {
+    state = state.copyWith(costMin: costMin);
   }
-
-  void setPowerMax(String power) {
-    if(power == _powerMax){
-      return;
-    }
-    _powerMax = power;
-    notifyListeners();
+  void setCostMax(String costMax) {
+    state = state.copyWith(costMax: costMax);
   }
-
-  void checkCivilsValid() {
-    _checkCivils = _civil1[2] &
-    _civil2[2] &
-    _civil3[2] &
-    _civil4[2] &
-    _civil5[2] &
-    _civil6[2];
+  void setPowerMin(String powerMin) {
+    state = state.copyWith(powerMin: powerMin);
   }
-
+  void setPowerMax(String powerMax) {
+    state = state.copyWith(powerMax: powerMax);
+  }
   void setCivilSearchUnit(int index) {
-    // 現在値を同じインデックスのとき何もしない
-    if(index == 0 && _civilSearchUnit[0]){
+    if (index == 0 && state.civilSearchUnit[0]) {
       return;
-    } else if(index == 1 && _civilSearchUnit[1]){
+    } else if (index == 1 && state.civilSearchUnit[1]) {
       return;
     }
-    _civilSearchUnit = [false, false];
-    _civilSearchUnit[index] = true;
-    notifyListeners();
+    state = state.copyWith(civilSearchUnit: [false, false]);
+    state.civilSearchUnit[index] = true;
   }
 
+  void resetName(){
+    state = state.copyWith(name: '');
+  }
   void resetCivilAll() {
-    _civil1 = [false, true, false];
-    _civil2 = [false, true, false];
-    _civil3 = [false, true, false];
-    _civil4 = [false, true, false];
-    _civil5 = [false, true, false];
-    _civil6 = [false, true, false];
-    _civilSearchUnit = [true, false];
-    checkCivilsValid();
-    notifyListeners();
+    state = state.copyWith(
+      civil1: [false, true, false],
+      civil2: [false, true, false],
+      civil3: [false, true, false],
+      civil4: [false, true, false],
+      civil5: [false, true, false],
+      civil6: [false, true, false]);
   }
 
   void setCivil1(int index) {
-    if (index == 0 && _civil1[0]) {
-      _civil1 = [false, true, false];
-      checkCivilsValid();
-      notifyListeners();
+    if (index == 0 && state.civil1[0]) {
+      state = state.copyWith(civil1: [false, true, false]);
       return;
-    } else if (index == 2 && _civil1[2]) {
-      _civil1 = [false, true, false];
-      checkCivilsValid();
-      notifyListeners();
+    } else if (index == 2 && state.civil1[2]) {
+      state = state.copyWith(civil1: [false, true, false]);
       return;
-    } else if (index == 1 && _civil1[1]) {
+    } else if (index == 1 && state.civil1[1]) {
       return;
     }
-    _civil1 = [false, false, false];
-    _civil1[index] = true;
-    checkCivilsValid();
-    notifyListeners();
+    state = state.copyWith(civil1: [false, false, false]);
+    state.civil1[index] = true;
   }
-
   void setCivil2(int index) {
-    if (index == 0 && _civil2[0]) {
-      _civil2 = [false, true, false];
-      checkCivilsValid();
-      notifyListeners();
+    if (index == 0 && state.civil2[0]) {
+      state = state.copyWith(civil2: [false, true, false]);
       return;
-    } else if (index == 2 && _civil2[2]) {
-      _civil2 = [false, true, false];
-      checkCivilsValid();
-      notifyListeners();
+    } else if (index == 2 && state.civil2[2]){
+      state = state.copyWith(civil2: [false, true, false]);
       return;
-    } else if (index == 1 && _civil2[1]) {
+    } else if (index == 1 && state.civil2[1]) {
       return;
     }
-    _civil2 = [false, false, false];
-    _civil2[index] = true;
-    checkCivilsValid();
-    notifyListeners();
+    state = state.copyWith(civil2: [false, false, false]);
+    state.civil2[index] = true;
   }
-
   void setCivil3(int index) {
-    if (index == 0 && _civil3[0]) {
-      _civil3 = [false, true, false];
-      checkCivilsValid();
-      notifyListeners();
+    if (index == 0 && state.civil3[0]) {
+      state = state.copyWith(civil3: [false, true, false]);
       return;
-    } else if (index == 2 && _civil3[2]) {
-      _civil3 = [false, true, false];
-      checkCivilsValid();
-      notifyListeners();
+    } else if (index == 2 && state.civil3[2]) {
+      state = state.copyWith(civil3: [false, true, false]);
       return;
-    } else if (index == 1 && _civil3[1]) {
+    } else if (index == 1 && state.civil3[1]) {
       return;
     }
-    _civil3 = [false, false, false];
-    _civil3[index] = true;
-    checkCivilsValid();
-    notifyListeners();
+    state = state.copyWith(civil3: [false, false, false]);
+    state.civil3[index] = true;
   }
-
   void setCivil4(int index) {
-    if (index == 0 && _civil4[0]) {
-      _civil4 = [false, true, false];
-      checkCivilsValid();
-      notifyListeners();
+    if (index == 0 && state.civil4[0]) {
+      state = state.copyWith(civil4: [false, true, false]);
       return;
-    } else if (index == 2 && _civil4[2]) {
-      _civil4 = [false, true, false];
-      checkCivilsValid();
-      notifyListeners();
+    } else if (index == 2 && state.civil4[2]) {
+      state = state.copyWith(civil4: [false, true, false]);
       return;
-    } else if (index == 1 && _civil4[1]) {
+    } else if (index == 1 && state.civil4[1]) {
       return;
     }
-    _civil4 = [false, false, false];
-    _civil4[index] = true;
-    checkCivilsValid();
-    notifyListeners();
+    state = state.copyWith(civil4: [false, false, false]);
+    state.civil4[index] = true;
   }
-
   void setCivil5(int index) {
-    if (index == 0 && _civil5[0]) {
-      _civil5 = [false, true, false];
-      checkCivilsValid();
-      notifyListeners();
+    if (index == 0 && state.civil5[0]) {
+      state = state.copyWith(civil5: [false, true, false]);
       return;
-    } else if (index == 2 && _civil5[2]) {
-      _civil5 = [false, true, false];
-      checkCivilsValid();
-      notifyListeners();
+    } else if (index == 2 && state.civil5[2]) {
+      state = state.copyWith(civil5: [false, true, false]);
       return;
-    } else if (index == 1 && _civil5[1]) {
+    } else if (index == 1 && state.civil5[1]) {
       return;
     }
-    _civil5 = [false, false, false];
-    _civil5[index] = true;
-    checkCivilsValid();
-    notifyListeners();
+    state = state.copyWith(civil5: [false, false, false]);
+    state.civil5[index] = true;
   }
-
   void setCivil6(int index) {
-    if (index == 0 && _civil6[0]) {
-      _civil6 = [false, true, false];
-      checkCivilsValid();
-      notifyListeners();
+    if (index == 0 && state.civil6[0]) {
+      state = state.copyWith(civil6: [false, true, false]);
       return;
-    } else if (index == 2 && _civil6[2]) {
-      _civil6 = [false, true, false];
-      checkCivilsValid();
-      notifyListeners();
+    } else if (index == 2 && state.civil6[2]) {
+      state = state.copyWith(civil6: [false, true, false]);
       return;
-    } else if (index == 1 && _civil6[1]) {
+    } else if (index == 1 && state.civil6[1]) {
       return;
     }
-    _civil6 = [false, false, false];
-    _civil6[index] = true;
-    checkCivilsValid();
-    notifyListeners();
+    state = state.copyWith(civil6: [false, false, false]);
+    state.civil6[index] = true;
   }
-
-  void resetAll() {
-    // 検索パラメータを初期化
-    // 文字入力系
-    _name = '';
-    _race = '';
-    _type = '';
-    _text = '';
-    _nameController.text = _name;
-    _raceController.text = _race;
-    _typeController.text = _type;
-    _textController.text = _text;
-
-    // 数字系
-    _costMin = '';
-    _costMax = '';
-    _powerMin = '';
-    _powerMax = '';
-    _costMinController.text = _costMin;
-    _costMaxController.text = _costMax;
-    _powerMinController.text = _powerMin;
-    _powerMaxController.text = _powerMax;
-
-    /* 文明の検索単位
-   * 0=>カード、1=>名前
-   */
-    _civilSearchUnit = [true, false];
-
-    /* 文明のセレクター
-   * 0=>必須、1=>任意、2=>不要
-   */
-    _civil1 = [false, true, false];
-    _civil2 = [false, true, false];
-    _civil3 = [false, true, false];
-    _civil4 = [false, true, false];
-    _civil5 = [false, true, false];
-    _civil6 = [false, true, false];
-    _checkCivils = false;
-
-    notifyListeners();
-  }
-
   void setSameName(bool sameName) {
-    _sameName = sameName;
-    notifyListeners();
+    state = state.copyWith(sameName: sameName);
   }
-
   void setFuzzySearch(bool fuzzySearch) {
-    _fuzzySearch = fuzzySearch;
-    notifyListeners();
+    state = state.copyWith(fuzzySearch: fuzzySearch);
   }
-
   void setSort(int sort){
-    _sort = sort;
-    notifyListeners();
+    state = state.copyWith(sort: sort);
   }
-
-  // 検索用パラメータ
+  void resetAll() {
+    state = const SearchParamState();
+  }
   String getQuery() {
-    if (_name == '今日のカード') {
-      String querySelectToday = '''
-    select co.object_id object_id, card_name, cp.image_name image_name
-    from card_module cm
-
-    join link_object_module lom
-    on cm.module_id = lom.module_id
-
-    join card_object co
-    on lom.object_id = co.object_id
-
-    join link_module_race lmr
-    on lmr.module_id = cm.module_id
-
-    join master_race mr
-    on mr.race_id = lmr.race_id
-
-    join card_physical cp
-    on co.object_id = cp.object_id
-
-    where (co.object_id % 365) = CAST(STRFTIME('%j', 'now') AS INTEGER)
-    group by co.object_id, cp.physical_id
-    limit 60;
+    String query = '''
+      select card.object_id object_id, card.card_name card_name, cp.image_name image_name
+      from (
+        select co.object_id object_id, card_name
+        from card_module cm
+        
+        join link_object_module lom
+        on cm.module_id = lom.module_id
+        
+        join card_object co
+        on lom.object_id = co.object_id
+        
+        join link_module_race lmr
+        on lmr.module_id = cm.module_id
+        
+        where cm.card_name like '%${getNameQuery()}%'
+        and cm.card_type like '%${getTypeQuery()}%'
+        and cm.ability_text like '%${getTextQuery()}%'
+        and lmr.race_id in (select race_id from master_race where race like '%${getRaceQuery()}%')
+        
+        ${getCostMinQuery()}
+        ${getCostMaxQuery()}
+        ${getPowerMinQuery()}
+        ${getPowerMaxQuery()}
+        ${getCivil1Query()}
+        ${getCivil2Query()}
+        ${getCivil3Query()}
+        ${getCivil4Query()}
+        ${getCivil5Query()}
+        ${getCivil6Query()}
+        group by co.object_id
+        ) card
+      join ${getSameNameQuery()} cp
+      on card.object_id = cp.object_id
+      
+      order by card.object_id desc    
     ''';
-      return querySelectToday;
-    }
-    String querySelect = '''
-select card.object_id object_id, card.card_name card_name, cp.image_name image_name
-from
-(
-select co.object_id object_id, card_name
-from card_module cm
-
-join link_object_module lom
-on cm.module_id = lom.module_id
-
-join card_object co
-on lom.object_id = co.object_id
-
-join link_module_race lmr
-on lmr.module_id = cm.module_id
-
-where cm.card_name like '%${getName()}%'
-and   cm.card_type like '%${getType()}%'
-and   cm.ability_text like '%${getText()}%'
-and   lmr.race_id in(select race_id from master_race where race like '%${getRace()}%')
-
-${getCostMin()}
-${getCostMax()}
-${getPowerMin()}
-${getPowerMax()}
-
-${getCivil1()}
-${getCivil2()}
-${getCivil3()}
-${getCivil4()}
-${getCivil5()}
-${getCivil6()}
-
-group by co.object_id
-)card
-
-join ${getSameNameFlag()} cp
-on card.object_id = cp.object_id
-
-order by card.object_id desc
-;
-    ''';
-    return querySelect;
+    return query;
   }
 
-  // getter for query
-  String getName() {
-    if (_fuzzySearch ==true) {
-      // あいまい検索が有効なとき、各文字の間に%を挿入
-      List<String> symbols = _name.split('');
+  String getNameQuery(){
+    if(state.fuzzySearch) {
+      //　あいまい検索が有効なとき、各シンボルの間に%を挿入
+      List<String> symbols = state.name.split('');
       return symbols.join('%');
     }
-    return _name;
+    return state.name;
   }
-
-  String getRace() {
-    return _race;
+  String getRaceQuery(){
+    return state.race;
   }
-
-  String getType() {
-    return _type;
+  String getTypeQuery(){
+    return state.type;
   }
-
-  String getText() {
-    return _text;
+  String getTextQuery(){
+    return state.text;
   }
-
-  String getCostMin() {
-    if (_costMin == '') {
-      return ' and cm.cost >= 0';
-    } else {
-      return ' and   cm.cost >= $_costMin';
+  String getCostMinQuery(){
+    if(state.costMin == '') {
+      return 'and cm.cost >= 0';
+    }else{
+      return 'and cm.cost >= ${state.costMin}';
     }
   }
-
-  String getCostMax() {
-    if (_costMax == '') {
-      return ' and cm.cost <= cast(1e999 as real)';
+  String getCostMaxQuery() {
+    if (state.costMax == '') {
+      return 'and cm.cost <= cast(1e999 as real)';
     } else {
-      return ' and   cm.cost <= $_costMax';
+      return 'and cm.cost <= ${state.costMax}';
     }
   }
-
-  String getPowerMin() {
-    if (_powerMin == '') {
-      return '';
+  String getPowerMinQuery() {
+    if (state.powerMin == '') {
+      return 'and cm.power >= 0';
     } else {
-      return ' and cm.power >=$_powerMin';
+      return 'and cm.power >= ${state.powerMin}';
     }
   }
-
-  String getPowerMax() {
-    if (_powerMax == '') {
-      return '';
+  String getPowerMaxQuery() {
+    if (state.powerMax == '') {
+      return 'and cm.power <= cast(1e999 as real)';
     } else {
-      return ' and cm.power <= $_powerMax';
+      return 'and cm.power <= ${state.powerMax}';
     }
   }
-
-  String getSameNameFlag() {
-    if (_sameName) {
-      return ' card_physical';
-    } else {
+  String getSameNameQuery(){
+    if(state.sameName) {
+      return 'card_physical';
+    }else{
       return '(select * from card_physical where primary_flag = 1)';
     }
   }
-
-  String getCivil() {
-    if (_civil1[0] && _civil2[0] && _civil3[0] && _civil4[0] && _civil5[0] && _civil6[0]) {
-      return '';
-    } else {
-      return 'and';
+  String getCivilSearchUnitQuery(){
+    if(state.civilSearchUnit[0]){
+      return 'co';
+    }else{
+      return 'cm';
     }
   }
-
-  String getCivil1() {
-    if (_civil1[0]) {
-      return ' and ${getCivilSearchUnit()}.civil1 =1';
-    } else if (_civil1[1]) {
+  String getCivil1Query(){
+    if(state.civil1[0]){
+      return 'and ${getCivilSearchUnitQuery()}.civil1 = 1';
+    }else if(state.civil1[1]){
       return '';
-    } else {
-      return ' and ${getCivilSearchUnit()}.civil1 =0';
+    }else if(state.civil1[2]){
+      return 'and ${getCivilSearchUnitQuery()}.civil1 = 0';
     }
+    return '';
   }
-
-  String getCivil2() {
-    if (_civil2[0]) {
-      return ' and ${getCivilSearchUnit()}.civil2 =1';
-    } else if (_civil2[1]) {
+  String getCivil2Query(){
+    if(state.civil2[0]){
+      return 'and ${getCivilSearchUnitQuery()}.civil2 = 1';
+    }else if(state.civil2[1]){
       return '';
-    } else {
-      return ' and ${getCivilSearchUnit()}.civil2 =0';
+    }else if(state.civil2[2]){
+      return 'and ${getCivilSearchUnitQuery()}.civil2 = 0';
     }
+    return '';
   }
-
-  String getCivil3() {
-    if (_civil3[0]) {
-      return ' and   ${getCivilSearchUnit()}.civil3 =1';
-    } else if (_civil3[1]) {
+  String getCivil3Query(){
+    if(state.civil3[0]){
+      return 'and ${getCivilSearchUnitQuery()}.civil3 = 1';
+    }else if(state.civil3[1]){
       return '';
-    } else {
-      return ' and   ${getCivilSearchUnit()}.civil3 =0';
+    }else if(state.civil3[2]){
+      return 'and ${getCivilSearchUnitQuery()}.civil3 = 0';
     }
+    return '';
   }
-
-  String getCivil4() {
-    if (_civil4[0]) {
-      return ' and   ${getCivilSearchUnit()}.civil4 =1';
-    } else if (_civil4[1]) {
+  String getCivil4Query(){
+    if(state.civil4[0]){
+      return 'and ${getCivilSearchUnitQuery()}.civil4= 1';
+    }else if(state.civil4[1]){
       return '';
-    } else {
-      return ' and   ${getCivilSearchUnit()}.civil4 =0';
+    }else if(state.civil4[2]){
+      return 'and ${getCivilSearchUnitQuery()}.civil4 = 0';
     }
+    return '';
   }
-
-  String getCivil5() {
-    if (_civil5[0]) {
-      return ' and   ${getCivilSearchUnit()}.civil5 =1';
-    } else if (_civil5[1]) {
+  String getCivil5Query(){
+    if(state.civil5[0]){
+      return 'and ${getCivilSearchUnitQuery()}.civil5 = 1';
+    }else if(state.civil5[1]){
       return '';
-    } else {
-      return ' and   ${getCivilSearchUnit()}.civil5 =0';
+    }else if(state.civil5[2]){
+      return 'and ${getCivilSearchUnitQuery()}.civil5 = 0';
     }
+    return '';
   }
-
-  String getCivil6() {
-    if (_civil6[0]) {
-      return ' and   ${getCivilSearchUnit()}.civil6 =1';
-    } else if (_civil6[1]) {
+  String getCivil6Query(){
+    if(state.civil6[0]){
+      return 'and ${getCivilSearchUnitQuery()}.civil6 = 1';
+    }else if(state.civil6[1]){
       return '';
-    } else {
-      return ' and   ${getCivilSearchUnit()}.civil6 =0';
+    }else if(state.civil6[2]){
+      return 'and ${getCivilSearchUnitQuery()}.civil6 = 0';
     }
-  }
-
-  String getCivilSearchUnit() {
-    if (_civilSearchUnit[0]) {
-      return ' co';
-    } else {
-      return ' cm';
-    }
+    return '';
   }
 }
+
+// Provider
+final searchParamProvider = NotifierProvider<SearchParamNotifier, SearchParamState>(SearchParamNotifier.new);

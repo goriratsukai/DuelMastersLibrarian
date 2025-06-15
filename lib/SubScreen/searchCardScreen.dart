@@ -1,16 +1,55 @@
-import 'dart:ffi';
-
 import 'package:flutter/material.dart';
 import 'package:dml/provider/search_param_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:provider/provider.dart';
 
-class SearchField extends StatelessWidget {
-  SearchField({
-    super.key,
-    required this.context,
-  });
+class SearchField extends ConsumerStatefulWidget {
+  const SearchField({super.key});
 
-  final BuildContext context;
+  @override
+  ConsumerState<SearchField> createState() => SearchFieldState();
+}
+
+
+class SearchFieldState extends ConsumerState<SearchField> {
+  // フォームのコントローラー
+  late final TextEditingController _nameController;
+  late final TextEditingController _raceController;
+  late final TextEditingController _typeController;
+  late final TextEditingController _textController;
+  late final TextEditingController _costMinController;
+  late final TextEditingController _costMaxController;
+  late final TextEditingController _powerMinController;
+  late final TextEditingController _powerMaxController;
+
+  @override
+  void initState(){
+    final initialParams = ref.read(searchParamProvider);
+    _nameController = TextEditingController(text: initialParams.name);
+    _raceController = TextEditingController(text: initialParams.race);
+    _typeController = TextEditingController(text: initialParams.type);
+    _textController = TextEditingController(text: initialParams.text);
+    _costMinController = TextEditingController(text: initialParams.costMin);
+    _costMaxController = TextEditingController(text: initialParams.costMax);
+    _powerMinController = TextEditingController(text: initialParams.powerMin);
+    _powerMaxController = TextEditingController(text: initialParams.powerMax);
+
+    super.initState();
+  }
+
+
+  @override
+  void dispose(){
+    _nameController.dispose();
+    _raceController.dispose();
+    _typeController.dispose();
+    _textController.dispose();
+    _costMinController.dispose();
+    _costMaxController.dispose();
+    _powerMinController.dispose();
+    _powerMaxController.dispose();
+    super.dispose();
+  }
 
   final List<PopupMenuItem<String>> _costPopupList = <PopupMenuItem<String>>[
     const PopupMenuItem<String>(value: '', child: Text('コスト無し')),
@@ -36,12 +75,42 @@ class SearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+    ref.listen(searchParamProvider.select((value) => value.name), (_, next){
+      if(_nameController.text != next) _nameController.text = next;
+    });
+    ref.listen(searchParamProvider.select((value) => value.race), (_, next){
+      if(_raceController.text != next) _raceController.text = next;
+    });
+    ref.listen(searchParamProvider.select((value) => value.type), (_, next){
+      if(_typeController.text != next) _typeController.text = next;
+    });
+    ref.listen(searchParamProvider.select((value) => value.text), (_, next){
+      if(_textController.text != next) _textController.text = next;
+    });
+    ref.listen(searchParamProvider.select((value) => value.costMin), (_, next){
+      if(_costMinController.text != next) _costMinController.text = next;
+    });
+    ref.listen(searchParamProvider.select((value) => value.costMax), (_, next){
+      if(_costMaxController.text != next) _costMaxController.text = next;
+    });
+    ref.listen(searchParamProvider.select((value) => value.powerMin), (_, next){
+      if(_powerMinController.text != next) _powerMinController.text = next;
+    });
+    ref.listen(searchParamProvider.select((value) => value.powerMax), (_, next){
+      if(_powerMaxController.text != next) _powerMaxController.text = next;
+    });
+
+    // state
+    final searchParamState = ref.watch(searchParamProvider);
+    // notifier
+    final searchParamNotifier = ref.read(searchParamProvider.notifier);
+
     //画面サイズ
     double deviceHeight = MediaQuery.of(context).size.height;
     double deviceWidth = MediaQuery.of(context).size.width;
 
-    return Consumer<SearchParamProvider>(
-      builder: (context, searchParam, child) => ListView(
+    return ListView(
         children: [
           Card(
             elevation: 3,
@@ -66,10 +135,10 @@ class SearchField extends StatelessWidget {
                       Expanded(
                         flex: 5,
                         child: TextFormField(
-                          controller: searchParam.nameController,
+                          controller: _nameController,
                           textInputAction: TextInputAction.next,
                           onChanged: (name) {
-                            searchParam.setName(name);
+                            ref.read(searchParamProvider.notifier).setName(name);
                           },
                           decoration: const InputDecoration(
                             border: UnderlineInputBorder(),
@@ -96,10 +165,10 @@ class SearchField extends StatelessWidget {
                       Expanded(
                         flex: 5,
                         child: TextFormField(
-                          controller: searchParam.raceController,
+                          controller: _raceController,
                           textInputAction: TextInputAction.next,
                           onChanged: (race) {
-                            searchParam.setRace(race);
+                            ref.read(searchParamProvider.notifier).setRace(race);
                           },
                           decoration: const InputDecoration(
                             border: UnderlineInputBorder(),
@@ -125,10 +194,10 @@ class SearchField extends StatelessWidget {
                       Expanded(
                         flex: 5,
                         child: TextFormField(
-                          controller: searchParam.typeController,
+                          controller: _typeController,
                           textInputAction: TextInputAction.next,
                           onChanged: (type) {
-                            searchParam.setType(type);
+                            ref.read(searchParamProvider.notifier).setType(type);
                           },
                           decoration: const InputDecoration(
                             border: UnderlineInputBorder(),
@@ -154,10 +223,10 @@ class SearchField extends StatelessWidget {
                       Expanded(
                         flex: 5,
                         child: TextFormField(
-                          controller: searchParam.textController,
+                          controller: _textController,
                           textInputAction: TextInputAction.done,
                           onChanged: (text) {
-                            searchParam.setText(text);
+                            ref.read(searchParamProvider.notifier).setText(text);
                           },
                           decoration: const InputDecoration(
                             border: UnderlineInputBorder(),
@@ -190,11 +259,11 @@ class SearchField extends StatelessWidget {
                         flex: 4,
                         child: TextFormField(
                           textAlign: TextAlign.center,
-                          controller: searchParam.costMinController,
+                          controller: _costMinController,
                           keyboardType: TextInputType.number,
                           textInputAction: TextInputAction.next,
                           onChanged: (cost) {
-                            searchParam.setCostMin(cost);
+                            ref.read(searchParamProvider.notifier).setCostMin(cost);
                           },
                           decoration: InputDecoration(
                             border: const UnderlineInputBorder(),
@@ -202,8 +271,8 @@ class SearchField extends StatelessWidget {
                                 elevation: 3,
                                 icon: const Icon(Icons.arrow_drop_down_outlined),
                                 onSelected: (String value) {
-                                  searchParam.costMinController.text = value;
-                                  searchParam.setCostMin(value);
+                                  _costMinController.text = value;
+                                  ref.read(searchParamProvider.notifier).setCostMin(value);
                                 },
                                 itemBuilder: (BuildContext context) {
                                   // return _costPopupList;
@@ -253,11 +322,11 @@ class SearchField extends StatelessWidget {
                         flex: 4,
                         child: TextFormField(
                             textAlign: TextAlign.center,
-                            controller: searchParam.costMaxController,
+                            controller: _costMaxController,
                             keyboardType: TextInputType.number,
                             textInputAction: TextInputAction.done,
                             onChanged: (cost) {
-                              searchParam.setCostMax(cost);
+                              ref.read(searchParamProvider.notifier).setCostMax(cost);
                             },
                             decoration: InputDecoration(
                               border: const UnderlineInputBorder(),
@@ -265,8 +334,8 @@ class SearchField extends StatelessWidget {
                                   elevation: 3,
                                   icon: const Icon(Icons.arrow_drop_down_outlined),
                                   onSelected: (String value) {
-                                    searchParam.costMaxController.text = value;
-                                    searchParam.setCostMax(value);
+                                    _costMaxController.text = value;
+                                    ref.read(searchParamProvider.notifier).setCostMax(value);
                                   },
                                   itemBuilder: (BuildContext context) {
                                     // return _costPopupList;
@@ -323,11 +392,11 @@ class SearchField extends StatelessWidget {
                   Expanded(
                     flex: 4,
                     child: TextFormField(
-                      controller: searchParam.powerMinController,
+                      controller: _powerMinController,
                       keyboardType: TextInputType.number,
                       textInputAction: TextInputAction.next,
                       onChanged: (power) {
-                        searchParam.setPowerMin(power);
+                        ref.read(searchParamProvider.notifier).setPowerMin(power);
                       },
                       decoration: const InputDecoration(border: UnderlineInputBorder(), suffixIcon: Icon(Icons.arrow_drop_down_outlined)),
                     ),
@@ -343,11 +412,11 @@ class SearchField extends StatelessWidget {
                   Expanded(
                     flex: 4,
                     child: TextFormField(
-                      controller: searchParam.powerMaxController,
+                      controller: _powerMaxController,
                       keyboardType: TextInputType.number,
                       textInputAction: TextInputAction.done,
                       onChanged: (power) {
-                        searchParam.setPowerMax(power);
+                        ref.read(searchParamProvider.notifier).setPowerMax(power);
                       },
                       decoration: const InputDecoration(border: UnderlineInputBorder(), suffixIcon: Icon(Icons.arrow_drop_down_outlined)),
                     ),
@@ -372,13 +441,13 @@ class SearchField extends StatelessWidget {
                         ),
                         TextButton(
                             onPressed: () {
-                              searchParam.resetCivilAll();
+                              ref.read(searchParamProvider.notifier).resetCivilAll();
                             },
                             child: const Text('リセット')),
                       ],
                     ),
                     Visibility(
-                        visible: searchParam.checkCivils,
+                        visible: searchParamState.checkCivils,
                         child: Text(
                           '全て不要にすると、1枚も検索できません',
                           style: TextStyle(color: Theme.of(context).colorScheme.error),
@@ -398,7 +467,7 @@ class SearchField extends StatelessWidget {
                               ),
                               ToggleButtons(
                                   onPressed: (int index) {
-                                    searchParam.setCivilSearchUnit(index);
+                                    ref.read(searchParamProvider.notifier).setCivilSearchUnit(index);
                                   },
                                   borderRadius: const BorderRadius.all(Radius.circular(8)),
                                   selectedColor: Theme.of(context).colorScheme.onSecondary,
@@ -408,7 +477,7 @@ class SearchField extends StatelessWidget {
                                     minHeight: 40.0,
                                     minWidth: 80.0,
                                   ),
-                                  isSelected: searchParam.civilSearchUnit,
+                                  isSelected: searchParamState.civilSearchUnit,
                                   children: const <Widget>[
                                     Text('カード', style: TextStyle(fontWeight: FontWeight.bold)),
                                     Text('名前', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -432,7 +501,7 @@ class SearchField extends StatelessWidget {
                               ToggleButtons(
                                 // direction: vertical ? Axis.vertical : Axis.horizontal,
                                 onPressed: (int index) {
-                                  searchParam.setCivil1(index);
+                                  searchParamNotifier.setCivil1(index);
                                 },
                                 borderRadius: const BorderRadius.all(Radius.circular(8)),
                                 selectedBorderColor: Colors.blue[700],
@@ -443,7 +512,7 @@ class SearchField extends StatelessWidget {
                                   minHeight: 40.0,
                                   minWidth: 80.0,
                                 ),
-                                isSelected: searchParam.civil1,
+                                isSelected: searchParamState.civil1,
                                 children: _civilButtonText,
                               ),
                             ],
@@ -463,7 +532,7 @@ class SearchField extends StatelessWidget {
                               ToggleButtons(
                                 // direction: vertical ? Axis.vertical : Axis.horizontal,
                                 onPressed: (int index) {
-                                  searchParam.setCivil2(index);
+                                  searchParamNotifier.setCivil2(index);
                                 },
                                 borderRadius: const BorderRadius.all(Radius.circular(8)),
                                 selectedBorderColor: Colors.amber[700],
@@ -474,7 +543,7 @@ class SearchField extends StatelessWidget {
                                   minHeight: 40.0,
                                   minWidth: 80.0,
                                 ),
-                                isSelected: searchParam.civil2,
+                                isSelected: searchParamState.civil2,
                                 children: _civilButtonText,
                               ),
                             ],
@@ -494,7 +563,7 @@ class SearchField extends StatelessWidget {
                               ToggleButtons(
                                 // direction: vertical ? Axis.vertical : Axis.horizontal,
                                 onPressed: (int index) {
-                                  searchParam.setCivil3(index);
+                                  searchParamNotifier.setCivil3(index);
                                 },
                                 borderRadius: const BorderRadius.all(Radius.circular(8)),
                                 selectedBorderColor: Colors.green[700],
@@ -505,7 +574,7 @@ class SearchField extends StatelessWidget {
                                   minHeight: 40.0,
                                   minWidth: 80.0,
                                 ),
-                                isSelected: searchParam.civil3,
+                                isSelected: searchParamState.civil3,
                                 children: _civilButtonText,
                               ),
                             ],
@@ -525,7 +594,7 @@ class SearchField extends StatelessWidget {
                               ToggleButtons(
                                 // direction: vertical ? Axis.vertical : Axis.horizontal,
                                 onPressed: (int index) {
-                                  searchParam.setCivil4(index);
+                                  searchParamNotifier.setCivil4(index);
                                 },
                                 borderRadius: const BorderRadius.all(Radius.circular(8)),
                                 selectedBorderColor: Colors.red[700],
@@ -536,7 +605,7 @@ class SearchField extends StatelessWidget {
                                   minHeight: 40.0,
                                   minWidth: 80.0,
                                 ),
-                                isSelected: searchParam.civil4,
+                                isSelected: searchParamState.civil4,
                                 children: _civilButtonText,
                               ),
                             ],
@@ -556,7 +625,7 @@ class SearchField extends StatelessWidget {
                               ToggleButtons(
                                 // direction: vertical ? Axis.vertical : Axis.horizontal,
                                 onPressed: (int index) {
-                                  searchParam.setCivil5(index);
+                                  searchParamNotifier.setCivil5(index);
                                 },
                                 borderRadius: const BorderRadius.all(Radius.circular(8)),
                                 selectedBorderColor: Colors.deepPurple[700],
@@ -567,7 +636,7 @@ class SearchField extends StatelessWidget {
                                   minHeight: 40.0,
                                   minWidth: 80.0,
                                 ),
-                                isSelected: searchParam.civil5,
+                                isSelected: searchParamState.civil5,
                                 children: _civilButtonText,
                               ),
                             ],
@@ -587,7 +656,7 @@ class SearchField extends StatelessWidget {
                               ToggleButtons(
                                 // direction: vertical ? Axis.vertical : Axis.horizontal,
                                 onPressed: (int index) {
-                                  searchParam.setCivil6(index);
+                                  searchParamNotifier.setCivil6(index);
                                 },
                                 borderRadius: const BorderRadius.all(Radius.circular(8)),
                                 selectedBorderColor: Colors.blueGrey[700],
@@ -598,7 +667,7 @@ class SearchField extends StatelessWidget {
                                   minHeight: 40.0,
                                   minWidth: 80.0,
                                 ),
-                                isSelected: searchParam.civil6,
+                                isSelected: searchParamState.civil6,
                                 children: _civilButtonText,
                               ),
                             ],
@@ -608,7 +677,6 @@ class SearchField extends StatelessWidget {
                 )),
           ),
         ],
-      ),
     );
   }
 }

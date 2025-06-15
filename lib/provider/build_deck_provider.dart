@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:riverpod/riverpod.dart';
 
 import '../source/card_data.dart';
 
-class BuildDeckProvider extends ChangeNotifier {
-  List<SearchCard> _deck = [];
+// NotifierProviderで管理するProvider
+final buildDeckProvider = NotifierProvider<BuildDeckNotifier, List<SearchCard>>(BuildDeckNotifier.new);
 
-  get deck => _deck;
+// Notifier本体
+class BuildDeckNotifier extends Notifier<List<SearchCard>> {
+  @override
+  List<SearchCard> build() {
+    return []; //初期化
+  }
 
   void addDeck(SearchCard card) {
-    _deck.add(card);
-    notifyListeners();
-  }
-  void resetDeck() {
-    _deck = [];
-    notifyListeners();
+    state = [...state, card];
   }
 
+  void resetDeck() {
+    state = [];
+  }
 }

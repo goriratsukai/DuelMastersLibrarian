@@ -7,6 +7,7 @@ import 'package:dml/src/links.dart';
 import 'package:dml/src/option.dart';
 import 'package:dml/src/search.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:animations/animations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -14,36 +15,19 @@ import 'package:provider/provider.dart';
 import 'util.dart';
 import 'theme.dart';
 
-class BottomNavigatorBarProvider with ChangeNotifier {
-  int _currentIndex = 1;
-
-  int get currentIndex => _currentIndex;
-
-  set currentIndex(int index) {
-    _currentIndex = index;
-    notifyListeners();
-  }
-}
+// 現在の画面StateProvider
+final bottomNavigatorBarProvider = StateProvider<int>((ref) => 1);
 
 void main() async {
   await dotenv.load(fileName: 'assets/.env');
   WidgetsFlutterBinding.ensureInitialized(); // プラグイン初期化
-  runApp(MultiProvider(
-    providers: [
-      ChangeNotifierProvider(
-        create: (context) => DownloadProvider(),
+  runApp(
+    const ProviderScope(
+      child: MaterialApp(
+        home: MyApp(),
       ),
-      ChangeNotifierProvider(
-        create: (context) => BottomNavigatorBarProvider(),
-      ),
-      ChangeNotifierProvider(create: (context) => SearchParamProvider()),
-      ChangeNotifierProvider(create: (context) => SearchResultsProvider()),
-      ChangeNotifierProvider(create: (context) => BuildDeckProvider()),
-    ],
-    child: const MaterialApp(
-      home: MyApp(),
     ),
-  ));
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -58,20 +42,17 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'librarian',
       theme: ThemeData(
-        // brightness: brightness,
-        useMaterial3: true,
-        // ライトモード固定
-        // colorScheme: brightness == Brightness.light
-        //     ? MaterialTheme.lightScheme()
-        //     : MaterialTheme.darkScheme(),
-        colorScheme: MaterialTheme.lightScheme(),
-        fontFamily: 'NotoSansJP',
-
-        textTheme: const TextTheme(
-          displayLarge: TextStyle(fontFamily: 'NotoSansJP'),
-        )
-
-      ),
+          // brightness: brightness,
+          useMaterial3: true,
+          // ライトモード固定
+          // colorScheme: brightness == Brightness.light
+          //     ? MaterialTheme.lightScheme()
+          //     : MaterialTheme.darkScheme(),
+          colorScheme: MaterialTheme.lightScheme(),
+          fontFamily: 'NotoSansJP',
+          textTheme: const TextTheme(
+            displayLarge: TextStyle(fontFamily: 'NotoSansJP'),
+          )),
       home: const BottomNavigation(),
       // supportedLocales: const [
       //   Locale('ja', 'JP'),
@@ -80,18 +61,19 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class BottomNavigation extends StatelessWidget {
+class BottomNavigation extends ConsumerWidget {
   const BottomNavigation({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     var screen = [
       const BuilderScreen(),
       const SearchScreen(),
       const OptionScreen(),
       const LinksScreen(),
     ];
-    final bottomNavigationBar = Provider.of<BottomNavigatorBarProvider>(context);
+
+    final selectedIndex = ref.watch(bottomNavigatorBarProvider);
 
     // ダイアログが出ない。要修正
     return PopScope(
@@ -115,16 +97,15 @@ class BottomNavigation extends StatelessWidget {
           }
         },
         child: Scaffold(
-          body: SafeArea(child: screen[bottomNavigationBar.currentIndex]),
+          body: SafeArea(child: screen[selectedIndex]),
           bottomNavigationBar: NavigationBar(
               height: 72,
               labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
               onDestinationSelected: (int index) {
-                bottomNavigationBar.currentIndex = index;
+                ref.read(bottomNavigatorBarProvider.notifier).state = index;
               },
-
               indicatorColor: Theme.of(context).colorScheme.primaryFixed,
-              selectedIndex: bottomNavigationBar.currentIndex,
+              selectedIndex: ref.read(bottomNavigatorBarProvider.notifier).state,
               destinations: const <Widget>[
                 NavigationDestination(selectedIcon: Icon(Icons.widgets), icon: Icon(Icons.widgets_outlined), label: 'マイデッキ'),
                 NavigationDestination(selectedIcon: Icon(Icons.sim_card), icon: Icon(Icons.sim_card_outlined), label: 'カード検索'),

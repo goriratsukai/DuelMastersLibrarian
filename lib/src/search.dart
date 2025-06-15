@@ -6,6 +6,7 @@ import 'package:dml/provider/search_result_provider.dart';
 import 'package:dml/widgets/searched_card_container.dart';
 import 'package:flutter/material.dart';
 import 'package:dml/source/card_data.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
@@ -19,32 +20,39 @@ import '../SubScreen/searchOptionScreen.dart';
 double deviceHeight = 0.0;
 double deviceWidth = 0.0;
 
-final ScrollController _scrollController = ScrollController();
-double _firstVisibleRowIndex = 0;
-
-enum Menu { Item1, Item2, Item3 }
-
-class SearchScreen extends StatefulWidget {
+class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
 
   @override
-  State<SearchScreen> createState() => SearchScreenState();
+  ConsumerState<SearchScreen> createState() => SearchScreenState();
 }
 
-class SearchScreenState extends State<SearchScreen> {
-  // 1ぺーじに表示するカードの枚数
-  int _page_coun = 60;
+class SearchScreenState extends ConsumerState<SearchScreen> {
+  final _textController = TextEditingController();
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final searchResults = Provider.of<SearchResultsProvider>(context, listen: false);
+    final searchResults = ref.watch(searchResultsProvider.notifier);
+
+    final asyncSearchResults = ref.watch(searchResultsProvider);
+
+    ref.listen(searchParamProvider.select((value) => value.name), (_, next) {
+      if (_textController.text != next) {
+        _textController.text = next;
+      }
+    });
 
     //画面サイズ
     deviceHeight = MediaQuery.of(context).size.height;
     deviceWidth = MediaQuery.of(context).size.width;
 
-    return Consumer<SearchParamProvider>(
-      builder: (context, searchParam, child) => Scaffold(
+    return Scaffold(
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat, // FABを中央下部に配置
         floatingActionButton: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -58,11 +66,10 @@ class SearchScreenState extends State<SearchScreen> {
                     elevation: 4.0,
                     borderRadius: BorderRadius.circular(30.0),
                     child: TextFormField(
-                      controller: searchParam.nameController,
+                      controller: _textController,
                       textCapitalization: TextCapitalization.words,
                       onChanged: (text) {
-                        searchParam.setName(text);
-                        // searchResults.search_name(searchParam);
+                        ref.read(searchParamProvider.notifier).setName(text);
                       },
                       textInputAction: TextInputAction.search,
                       decoration: InputDecoration(
@@ -79,7 +86,7 @@ class SearchScreenState extends State<SearchScreen> {
                               IconButton(
                                   icon: const Icon(Icons.clear),
                                   onPressed: () {
-                                    searchParam.resetName();
+                                    ref.read(searchParamProvider.notifier).resetName();
                                   }),
                             ],
                           )),
@@ -100,47 +107,30 @@ class SearchScreenState extends State<SearchScreen> {
                 ),
               ],
             )),
-        body: FutureBuilder(
-            future: searchResults.search_name(searchParam),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const CircularProgressIndicator();
-              } else if (snapshot.hasError) {
-                return Text('Error: ${snapshot.error}');
-              }
+        body: asyncSearchResults.when(
+          data: (results) {
+            if (results.isEmpty) {
+              return const Center(
+                child: Text('検索結果はありません。'),
+              );
+            }
+            return GridView.builder(
+              shrinkWrap: true,
+              itemCount: results.length + ref.watch(displayColumnProvider),
+              itemBuilder: (context, index) {
+                return results.length > index
+                    ? TestCardContainer(searchedCard: results[index], padding: 5)
 
-              return Consumer<SearchResultsProvider>(builder: (context, searchResults, child) {
-                // 検索結果が0件のときはメッセージ表示
-                if (searchResults.length == 0) {
-                  return const Center(
-                    child: Text('検索結果はありません。'),
-                  );
-                }
-
-                // 検索結果が1件以上あるとき
-                // selectの結果を基に検索結果を生成する。見た目の調整の為、最下段にはカードと同じサイズのSizeBoxを配置
-                return GridView.builder(
-                  controller: _scrollController,
-                  shrinkWrap: true,
-                  itemCount: searchResults.length + searchResults.displayColumn,
-                  itemBuilder: (context, index) {
-                    return searchResults.length > index
-                        ? Hero(
-                            tag: searchResults.results[index].object_id,
-                            child: TestCardContainer(
-                              searchedCard: searchResults.results[index],
-                              padding: 5,
-                            ))
-                        : SizedBox(
-                            height: deviceWidth / searchResults.displayColumn * 1.4,
-                          );
-                  },
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: searchResults.displayColumn, childAspectRatio: 0.715),
-                );
-              });
-            }),
-      ),
-    );
+                    : SizedBox(
+                        height: deviceWidth / ref.watch(displayColumnProvider) * 1.4,
+                      );
+              },
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: ref.watch(displayColumnProvider), childAspectRatio: 0.715),
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stackTrace) => Center(child: Text(error.toString())),
+        ));
   }
 }
 
@@ -162,9 +152,9 @@ void _showMultiPageDialog(BuildContext context) {
           child: StatefulBuilder(
             builder: (BuildContext context, StateSetter setState) {
               // ページの内容をリストで用意しておくよ！
-              final List<Widget> _pages = <Widget>[
-                SearchField(context: context),
-                SearchOption(context: context),
+              final List<Widget> pages = <Widget>[
+                SearchField(),
+                SearchOption(),
               ];
               return Container(
                 decoration: BoxDecoration(
@@ -189,7 +179,7 @@ void _showMultiPageDialog(BuildContext context) {
                                 print('selectedIndex:${_selectedIndex}');
                               });
                             },
-                            children: _pages, // _pagesのリストをPageViewに渡すだけ！
+                            children: pages, // _pagesのリストをPageViewに渡すだけ！
                           ),
                         ),
                       ),

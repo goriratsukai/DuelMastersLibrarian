@@ -54,7 +54,7 @@ class DraggableCardContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Draggable(
-affinity: Axis.vertical,
+        affinity: Axis.vertical,
         data: searchedCard,
         feedback: Padding(
           padding: const EdgeInsets.all(3),
@@ -63,20 +63,16 @@ affinity: Axis.vertical,
               child: CachedNetworkImage(
                 height: height,
                 width: width,
-                imageUrl:
-                '${dotenv.get('CARD_IMAGE_URL')}${searchedCard.image_name}.webp',
-                    // 'https://d24xxkmtso62vi.cloudfront.net/images/${searchedCard.image_name}.jpg',
+                imageUrl: '${dotenv.get('CARD_IMAGE_URL')}${searchedCard.image_name}.webp',
+                // 'https://d24xxkmtso62vi.cloudfront.net/images/${searchedCard.image_name}.jpg',
                 placeholder: (context, url) => const Card(
                     borderOnForeground: true,
                     child: Align(
                       alignment: Alignment.center,
                       child: CircularProgressIndicator(),
                     )),
-                errorWidget: (context, url, error) => Card(
-                    borderOnForeground: true,
-                    child: Align(
-                        alignment: Alignment.center,
-                        child: Text(searchedCard.card_name))),
+                errorWidget: (context, url, error) =>
+                    Card(borderOnForeground: true, child: Align(alignment: Alignment.center, child: Text(searchedCard.card_name))),
               )),
         ),
         child: Padding(
@@ -84,8 +80,7 @@ affinity: Axis.vertical,
             child: CachedNetworkImage(
               height: height,
               width: width,
-              imageUrl:
-              '${dotenv.get('CARD_IMAGE_URL')}${searchedCard.image_name}.webp',
+              imageUrl: '${dotenv.get('CARD_IMAGE_URL')}${searchedCard.image_name}.webp',
 
               // 'https://d24xxkmtso62vi.cloudfront.net/images/${searchedCard.image_name}.webp',
               // imageBuilder: (context, image){if()},
@@ -95,17 +90,15 @@ affinity: Axis.vertical,
                     alignment: Alignment.center,
                     child: CircularProgressIndicator(),
                   )),
-              errorWidget: (context, url, error) => Card(
-                  borderOnForeground: true,
-                  child: Align(
-                      alignment: Alignment.center,
-                      child: Text(searchedCard.card_name))),
+              errorWidget: (context, url, error) =>
+                  Card(borderOnForeground: true, child: Align(alignment: Alignment.center, child: Text(searchedCard.card_name))),
             )));
   }
 }
 
 class TestCardContainer extends StatelessWidget {
-  const TestCardContainer({super.key,
+  const TestCardContainer({
+    super.key,
     required this.searchedCard,
     required this.padding,
   });
@@ -115,53 +108,73 @@ class TestCardContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // GestureDetectorでタップイベントを検知するよ！
     return Padding(
-        padding: EdgeInsets.all(padding),
-        child: CachedNetworkImage(
-          imageUrl:
-          '${dotenv.get('CARD_IMAGE_URL')}${searchedCard.image_name}.webp',
-
-          // 'https://d24xxkmtso62vi.cloudfront.net/images/${searchedCard.image_name}.webp',
-          // imageBuilder: (context, image){if()},
-          placeholder: (context, url) => const Card(
-              borderOnForeground: true,
-              child: Align(
-                alignment: Alignment.center,
-                child: CircularProgressIndicator(),
-              )),
-          errorWidget: (context, url, error) => Card(
-              borderOnForeground: true,
-              child: Align(
+      padding: EdgeInsets.all(padding),
+      child: GestureDetector(
+        onTap: () {
+          // フルスクリーンダイアログを表示するよ！
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => FullScreenImageDialog(
+                imageUrl: '${dotenv.get('CARD_IMAGE_URL')}${searchedCard.image_name}.webp',
+                heroTag: searchedCard.image_name, // ここでheroTagを指定するよ
+              ),
+            ),
+          );
+        },
+        child: Hero(
+          // Heroウィジェットで囲むよ！
+          tag: searchedCard.image_name, // heroTagはsearchedCard.image_nameにするよ
+          child: CachedNetworkImage(
+            imageUrl: '${dotenv.get('CARD_IMAGE_URL')}${searchedCard.image_name}.webp',
+            placeholder: (context, url) => const Card(
+                borderOnForeground: true,
+                child: Align(
                   alignment: Alignment.center,
-                  child: Text(searchedCard.card_name))),
-        )
-
-        // Image.network(
-        //   'https://dm.takaratomy.co.jp/wp-content/card/cardimage/${searchedCard.image_name}.jpg',
-        //   errorBuilder: (context, object, stackTrace) {
-        //     return Card(
-        //         borderOnForeground: true,
-        //         child:Align(alignment: Alignment.center,child:
-        //         Text(searchedCard.card_name)));
-        //   },
-        // )
-        );
+                  child: CircularProgressIndicator(),
+                )),
+            errorWidget: (context, url, error) =>
+                Card(borderOnForeground: true, child: Align(alignment: Alignment.center, child: Text(searchedCard.card_name))),
+          ),
+        ),
+      ),
+    );
   }
 }
 
-// class JsonCacheManager extends CacheManager with ImageCacheManager{
-//   static const key = 'libCachedImageData';
-//
-//   final JsonCacheManager _instance = JsonCacheManager(
-//     Config(
-//       key,
-//       stalePeriod: const Duration(days: 30),
-//       maxNrOfCacheObjects: 500,
-//       repo: JsonCacheInfoRepository(databaseName: key),
-//       fileSystem: IOFileSystem(key),
-//       fileService: HttpFileService(),
-//     ),
-//   );
-//
-//   JsonCacheManager(super.config);
-// }
+// フルスクリーンで画像を表示するための新しいWidgetを作るよ！
+class FullScreenImageDialog extends StatelessWidget {
+  const FullScreenImageDialog({
+    super.key,
+    required this.imageUrl,
+    required this.heroTag,
+  });
+
+  final String imageUrl;
+  final String heroTag;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      // backgroundColor: Colors.transparent,
+      // backgroundColor: Colors.white.withAlpha(0), // 背景は黒にすると画像が映えるよ！
+      body: Center(
+        child: GestureDetector(
+          onTap: () {
+            Navigator.of(context).pop(); // タップしたら戻るよ
+          },
+          child: Hero(
+            // ここもHeroウィジェットで囲むの忘れずに！
+            tag: heroTag, // heroTagはTestCardContainerと同じものを使うよ
+            child: CachedNetworkImage(
+              imageUrl: imageUrl,
+              placeholder: (context, url) => const Center(child: CircularProgressIndicator(color: Colors.white)),
+              errorWidget: (context, url, error) => const Center(child: Icon(Icons.error, color: Colors.white)),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

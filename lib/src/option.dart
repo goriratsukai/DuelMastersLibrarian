@@ -1,71 +1,66 @@
 import 'dart:io';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-class DownloadProvider extends ChangeNotifier {
-  bool _isLoading = false;
+class DownloadNotifier extends AsyncNotifier<void> {
+  @override
+  Future<void> build() async {
+    // 初期化時はなにもしない
+  }
+  Future<void> downloadFile() async {
+    // Stateをローディング状態にする
+    state = const AsyncValue.loading();
 
-  bool get isLoading => _isLoading;
+    // try-catchで成功/失敗をハンドリング
+    state = await AsyncValue.guard(() async {
+      String url = dotenv.get('CARD_DATABASE_URL');
+      String filename = dotenv.get('CARD_DATABASE_FILE_NAME');
+      Directory downloadDirectory = await getApplicationDocumentsDirectory();
+      String dir = downloadDirectory.path;
 
-  void setLoading(bool value) {
-    _isLoading = value;
-    notifyListeners();
+      http.Response response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        File file = File('$dir/$filename');
+        await file.writeAsBytes(response.bodyBytes);
+      } else {
+        throw Exception('httpエラー：${response.statusCode}');
+      }
+    });
   }
 }
 
-class OptionScreen extends StatelessWidget {
+// Provider
+final downloadProvider = AsyncNotifierProvider<DownloadNotifier, void>(DownloadNotifier.new);
+
+// 画面
+class OptionScreen extends ConsumerWidget {
   const OptionScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    Future<void> downloadFile() async {
-      final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
-      String url = dotenv.get('CARD_DATABASE_URL');
-      String filename = dotenv.get('CARD_DATABASE_FILE_NAME');
-
-      try {
-        // ローディング開始
-        downloadProvider.setLoading(true);
-
-        // ダウンロード先の取得
-        Directory downloadDirectory = await getApplicationDocumentsDirectory();
-        String dir = downloadDirectory.path;
-
-        // ファイルダウンロード
-        http.Response response = await http.get(Uri.parse(url));
-        if (response.statusCode == 200) {
-          // ファイル保存
-          File file = File('$dir/$filename');
-          await file.writeAsBytes(response.bodyBytes);
-          print('ファイルのダウンロードが完了しました：$dir/$filename');
-          // 成功通知
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('ファイルのダウンロードが完了しました：$dir/$filename')),
-          );
-        } else {
-          print('httpエラー：${response.statusCode}');
-          // HTTPエラー通知
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('HTTPエラー：${response.statusCode}')),
-          );
-        }
-      } catch (e) {
-        print('エラーが発生しました：$e');
-        // エラー通知
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('エラーが発生しました：$e')),
-        );
-      } finally {
-        // ローディング終了
-        downloadProvider.setLoading(false);
-      }
-    }
-
+  Widget build(BuildContext context, WidgetRef ref) {
     final double deviceHeight = MediaQuery.of(context).size.height;
     final double deviceWidth = MediaQuery.of(context).size.width;
+
+    ref.listen(downloadProvider, (previous, next) {
+      if(next is AsyncError) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('エラーが発生しました：${next.error.toString()}'),
+          ),
+        );
+      }
+      if (next is AsyncData) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('カードデータのダウンロードが完了しました'),
+          ),
+        );
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -85,7 +80,7 @@ class OptionScreen extends StatelessWidget {
                 10,
               ),
               child: ElevatedButton(
-                onPressed: downloadFile,
+                onPressed: (){ref.read(downloadProvider.notifier).downloadFile();},
                 style: ElevatedButton.styleFrom(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -94,14 +89,13 @@ class OptionScreen extends StatelessWidget {
                 child: const Text("カードデータをダウンロード"),
               ),
             ),
-            Consumer<DownloadProvider>(
-              builder: (context, downloadProvider, child) {
-                return downloadProvider.isLoading
-                    ? CircularProgressIndicator()
-                    : SizedBox.shrink();
-              },
-            ),
-          ],
+
+            ref.watch(downloadProvider).when(
+              loading: () => const CircularProgressIndicator(),
+              error: (error, stackTrace) => Text('エラーが発生しました：$error'),
+              data: (data) => const SizedBox.shrink(),
+            )
+          ]
         ),
       ),
     );
