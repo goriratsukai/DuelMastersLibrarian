@@ -53,7 +53,7 @@ class OptionScreen extends ConsumerWidget {
           ),
         );
       }
-      if (next is AsyncData) {
+      if (next is AsyncData && previous is AsyncLoading) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('カードデータのダウンロードが完了しました'),
@@ -91,7 +91,7 @@ class OptionScreen extends ConsumerWidget {
             ),
 
             ref.watch(downloadProvider).when(
-              loading: () => const CircularProgressIndicator(),
+              loading: () => const LinearProgressIndicator(),
               error: (error, stackTrace) => Text('エラーが発生しました：$error'),
               data: (data) => const SizedBox.shrink(),
             )

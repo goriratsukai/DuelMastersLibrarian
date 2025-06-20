@@ -42,6 +42,7 @@ class SearchResultsNotifier extends AsyncNotifier<List<SearchCard>> {
 // Provider
 final searchResultsProvider = AsyncNotifierProvider<SearchResultsNotifier, List<SearchCard>>(SearchResultsNotifier.new);
 
+// 表示列を管理するプロバイダー
 class DisplayColumnNotifier extends Notifier<int>{
   @override
   int build() {

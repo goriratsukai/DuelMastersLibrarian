@@ -1,7 +1,7 @@
 import 'package:dml/provider/search_param_provider.dart';
 import 'package:dml/provider/search_result_provider.dart';
 import 'package:dml/provider/build_deck_provider.dart';
-import 'package:dml/src/builder.dart';
+import 'package:dml/src/deck_list.dart';
 import 'package:dml/src/home.dart';
 import 'package:dml/src/links.dart';
 import 'package:dml/src/option.dart';
@@ -67,7 +67,7 @@ class BottomNavigation extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     var screen = [
-      const BuilderScreen(),
+      const DeckListScreen(),
       const SearchScreen(),
       const OptionScreen(),
       const LinksScreen(),
