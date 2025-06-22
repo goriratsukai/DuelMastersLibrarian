@@ -1,21 +1,12 @@
-import 'package:animations/animations.dart';
 import 'package:dml/provider/build_deck_provider.dart';
 import 'package:dml/provider/search_param_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:flutter_speed_dial/flutter_speed_dial.dart';
-import 'package:provider/provider.dart';
-import 'package:visibility_detector/visibility_detector.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
-
-import 'searchCardScreen.dart';
 import 'show_multipage_dialog.dart';
 import '../provider/search_result_provider.dart';
 import '../source/card_data.dart';
-import '../source/grid_painter.dart';
-import '../widgets/deck_Information.dart';
 import '../widgets/searched_card_container.dart';
 
 double deviceHeight = 0.0;
@@ -30,38 +21,40 @@ class BuildDeckScreen extends ConsumerStatefulWidget {
 }
 
 class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> {
-  final _textController = TextEditingController();
+  // カード名検索のコントローラ
+  late final TextEditingController _nameController;
 
   // 並び替えモードの状態を管理するフラグ
   bool _isReorderMode = false;
 
   @override
+  void initState() {
+    // カード名検索の初期値セット
+    final initialParams = ref.read(searchParamProvider);
+    _nameController = TextEditingController(text: initialParams.name);
+    super.initState();
+  }
+
+  @override
+  void dispose(){
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // ref は ConsumerState のプロパティとしてアクセスできるよ
-    ref.listen(searchParamProvider.select((value) => value.name), (_, next) {
-      if (_textController.text != next) {
-        _textController.text = next;
-      }
-    });
 
     final asyncSearchResults = ref.watch(searchResultsProvider);
-    final buildDeck = ref.watch(buildDeckProvider);
+    // final buildDeck = ref.watch(buildDeckProvider);
 
     deviceHeight = MediaQuery.of(context).size.height;
     deviceWidth = MediaQuery.of(context).size.width;
 
-    double deckAreaHeight;
+    double deckAreaHeight = deviceWidth * 7 / 8;
     int crossAxisCount = 8;
     double childAspectRatio = 0.715;
     final itemWidth = deviceWidth / crossAxisCount;
     final itemHeight = itemWidth / childAspectRatio;
-
-    if (buildDeck.length <= 40) {
-      deckAreaHeight = deviceWidth * 7 / 8;
-    } else {
-      final rowCount = (buildDeck.length / crossAxisCount).ceil();
-      deckAreaHeight = itemHeight * rowCount;
-    }
 
     return Scaffold(
       bottomNavigationBar: BottomAppBar(
@@ -88,15 +81,13 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> {
                 label: const Text('クリア', style: TextStyle(fontSize: 10)),
               ),
               // このボタンはAppBarに移動したので、コメントアウトか削除
-              // ElevatedButton.icon(
-              //   onPressed: () {
-              //     setState(() {
-              //       _isReorderMode = !_isReorderMode;
-              //     });
-              //   },
-              //   icon: const Icon(Icons.sort_rounded),
-              //   label: const Text('並べ替え', style: TextStyle(fontSize: 10)),
-              // ),
+              ElevatedButton.icon(
+                onPressed: () {
+                  ref.read(buildDeckProvider.notifier).sortDeck;
+                },
+                icon: const Icon(Icons.sort_rounded),
+                label: const Text('並べ替え', style: TextStyle(fontSize: 10)),
+              ),
               ElevatedButton.icon(
                 onPressed: () {
                   print('保存ボタンが押されたよ！');
@@ -112,6 +103,25 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> {
         title: const Text('デッキ作る画面'),
         leading: IconButton(onPressed: () => {Navigator.pop(context)}, icon: const Icon(Icons.arrow_back)),
         actions: [
+          // テスト用入れ替えボタン
+          IconButton(
+            icon: const Icon(Icons.swap_horiz),
+            tooltip: 'テスト入替',
+            onPressed: () {
+              // デッキにカードが2枚以上あるか確認
+              if (ref.read(buildDeckProvider).length >= 2) {
+                print('テストボタンが押されました: 0番目と1番目を入れ替えます');
+                // Providerを直接呼び出して、0番目と1番目のカードを入れ替える
+                ref.read(buildDeckProvider.notifier).swapCards(0, 1);
+              } else {
+                print('入れ替えにはカードが2枚以上必要です');
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('入れ替えにはカードが2枚以上必要です')),
+                );
+              }
+            },
+          ),
+
           // ここに並び替えモード切替ボタンを追加！
           IconButton(
             tooltip: '並び替えモード切替',
@@ -167,7 +177,7 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> {
                   borderRadius: BorderRadius.circular(30.0),
                   child: TextFormField(
                     enabled: !_isReorderMode,
-                    controller: _textController,
+                    controller:_nameController,
                     textCapitalization: TextCapitalization.words,
                     onChanged: (text) {
                       ref.read(searchParamProvider.notifier).setName(text);
@@ -212,68 +222,71 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> {
           DragTarget<SearchCard>(
             builder: (context, candidateData, rejectedData) {
               return Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.secondaryContainer,
-                ),
-                width: double.infinity,
-                height: deckAreaHeight,
-                child: GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: buildDeck.length,
-                    itemBuilder: (context, index) {
-                      final card = buildDeck[index];
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.secondaryContainer,
+                  ),
+                  width: double.infinity,
+                  height: deckAreaHeight,
+                  child: Consumer(builder: (context, ref, child) {
+                    final buildDeck = ref.watch(buildDeckProvider);
+                    return GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: buildDeck.length,
+                        itemBuilder: (context, index) {
+                          final card = buildDeck[index];
 
-                      // カードの基本UI
-                      Widget cardWidget =
-                      DeletableCardContainer(
-                        // アニメーションのためにユニークなキーを設定
-                        key: ValueKey('${card.image_name}_${index}'),
-                        searchedCard: card,
-                        index: index,
-                        // 並び替えモードの状態を渡す
-                        isReorderMode: _isReorderMode,
-                      );
+                          // debug print
+                          print('index: $index, card_name: ${card.card_name}, hashCode: ${card.hashCode}');
 
-                      // 並び替えモードの時だけDraggableとDragTargetでラップする
-                      if (_isReorderMode) {
-                        return Draggable<int>(
-                          data: index,
-                          // ドラッグ中の見た目
-                          feedback: SizedBox(
-                            width: itemWidth,
-                            height: itemHeight,
-                            child: TestCardContainer(searchedCard: card, padding: 0),
-                          ),
-                          // ドラッグ中に元の場所に表示されるウィジェット
-                          childWhenDragging: Opacity(
-                            opacity: 0.3,
-                            child: cardWidget,
-                          ),
-                          child: DragTarget<int>(
-                            builder: (context, candidateData, rejectedData) {
-                              return cardWidget;
-                            },
-                            onWillAccept: (fromIndex) {
-                              // 自分自身の上にはドロップできないようにする
-                              return fromIndex != index;
-                            },
-                            onAccept: (fromIndex) {
-                              // カードを入れ替える
-                              ref.read(buildDeckProvider.notifier).swapCards(fromIndex, index);
-                            },
-                          ),
-                        );
-                      }
+                          // カードの基本UI
+                          final cardWidget = DeletableCardContainer(
+                              searchedCard: card,
+                              index: index,
+                              // 並び替えモードの状態を渡す
+                              isReorderMode: _isReorderMode);
+                          // 通常モードのときはカードの基本UIを使う
+                          Widget item = cardWidget;
 
-                      // 通常モードのときはそのまま表示
-                      return cardWidget;
-                    },
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: crossAxisCount,
-                      childAspectRatio: childAspectRatio,
-                    )),
-              );
+                          // 並び替えモードの時はDraggableとDragTargetでラップしたものに置き換える
+                          if (_isReorderMode) {
+                            item = Draggable<int>(
+                              data: index,
+                              // ドラッグ中の見た目
+                              feedback: SizedBox(
+                                width: itemWidth,
+                                height: itemHeight,
+                                child: TestCardContainer(searchedCard: card, padding: 0),
+                              ),
+                              // ドラッグ中に元の場所に表示されるウィジェット
+                              childWhenDragging: Opacity(
+                                opacity: 0.3,
+                                child: cardWidget,
+                              ),
+                              child: DragTarget<int>(
+                                builder: (context, candidateData, rejectedData) {
+                                  return cardWidget;
+                                },
+                                onWillAcceptWithDetails: (fromIndex) {
+                                  // 自分自身の上にはドロップできないようにする
+                                  return fromIndex.data != index;
+                                },
+                                onAcceptWithDetails: (fromIndex) {
+                                  // カードを入れ替える
+                                  ref.read(buildDeckProvider.notifier).swapCards(fromIndex.data, index);
+                                },
+                              ),
+                            );
+                          }
+
+                          // keyを付与してreturn
+                          return KeyedSubtree(key: ValueKey(card), child: item);
+                        },
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: crossAxisCount,
+                          childAspectRatio: childAspectRatio,
+                        ));
+                  }));
             },
             onWillAcceptWithDetails: (details) {
               return true;
@@ -281,7 +294,7 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> {
             onAcceptWithDetails: (card) {
               final result = ref.read(buildDeckProvider.notifier).addDeck(card.data);
               if (result == 1) {
-                Fluttertoast.showToast(msg:'同名カードは4枚まで追加できます。${card.data.card_name}');
+                Fluttertoast.showToast(msg: '同名カードは4枚まで追加できます。${card.data.card_name}');
               } else if (result == 2) {
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                   content: Text('メインデッキの上限に達しました。カードは60枚まで追加できます'),
