@@ -481,11 +481,11 @@ class SearchParamNotifier extends Notifier<SearchParamState> {
 
   String getSortKeyQuery(){
     if(state.sortKey[0]){
-      return 'order by card.object_id ${getSortOrderQuery()}';
+      return 'order by card.object_id ${getSortOrderQuery()} nulls last';
     }else if(state.sortKey[1]){
-      return 'order by card.power ${getSortOrderQuery()}';
+      return 'order by card.power ${getSortOrderQuery()} nulls last';
     }else{
-      return 'order by card.cost ${getSortOrderQuery()}';
+      return 'order by card.cost ${getSortOrderQuery()} nulls last';
     }
   }
 
@@ -496,8 +496,6 @@ class SearchParamNotifier extends Notifier<SearchParamState> {
       return 'desc';
     }
   }
-
-
 }
 
 // Provider

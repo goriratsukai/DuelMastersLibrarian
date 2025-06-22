@@ -11,10 +11,12 @@ class DeletableCardContainer extends ConsumerStatefulWidget {
     super.key,
     required this.searchedCard,
     required this.index, // デッキリストの何番目かを受け取る
+    required this.isReorderMode // 並び替えモードかどうか
   });
 
   final SearchCard searchedCard;
   final int index;
+  final bool isReorderMode;
 
   @override
   ConsumerState<DeletableCardContainer> createState() => _DeletableCardContainerState();
@@ -32,13 +34,13 @@ class _DeletableCardContainerState extends ConsumerState<DeletableCardContainer>
 
     return GestureDetector(
       // 垂直方向のドラッグ開始を検知
-      onVerticalDragStart: (details) {
+      onVerticalDragStart: widget.isReorderMode ? null :(details) {
         setState(() {
           _isDragging = true;
         });
       },
       // ドラッグ中の動きを検知
-      onVerticalDragUpdate: (details) {
+      onVerticalDragUpdate: widget.isReorderMode ? null :(details) {
         setState(() {
           if (_dragY > -50 && _dragY < 50) {
             _dragY += details.delta.dy;
@@ -54,12 +56,13 @@ class _DeletableCardContainerState extends ConsumerState<DeletableCardContainer>
         });
       },
       // ドラッグ終了を検知
-      onVerticalDragEnd: (details) {
+      onVerticalDragEnd: widget.isReorderMode ? null :(details) {
         // 下向きに一定距離（今回は50px）以上ドラッグされていたら削除
         if (_dragY > 50) {
           // Providerを呼び出してカードを削除！
           ref.read(buildDeckProvider.notifier).removeDeck(widget.index);
           // 削除したことをユーザーに通知
+          ScaffoldMessenger.of(context).removeCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('${widget.searchedCard.card_name} をデッキから削除しました'),
@@ -205,7 +208,7 @@ class TestCardContainer extends StatelessWidget {
             pageBuilder: (context, _, __) {
               return FullScreenImageDialog(
                 imageUrl: '${dotenv.get('CARD_IMAGE_URL')}${searchedCard.image_name}.webp',
-                heroTag: '${searchedCard.image_name}$heroOffset', // ここでheroTagを指定するよ
+                heroTag: '${searchedCard.image_name}$heroOffset',
               );
             },
           ))

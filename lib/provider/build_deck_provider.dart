@@ -80,14 +80,18 @@ class BuildDeckNotifier extends Notifier<List<SearchCard>> {
     state = sortedList;
   }
 
-
-
   // デッキのカードを入れ替える
   void swapCards(int index1, int index2) {
-    final temp = state[index1];
-    state[index1] = state[index2];
-    state[index2] = temp;
+    // インデックスの範囲チェック
+    if (index1 < 0 || index1 >= state.length || index2 < 0 || index2 >= state.length) {
+      return;
+    }
+    final newList = List<SearchCard>.from(state);
 
-    state = List.from(state);
+    final temp = newList[index1];
+    newList[index1] = newList[index2];
+    newList[index2] = temp;
+
+    state = newList;
   }
 }

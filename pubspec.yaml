@@ -45,6 +45,7 @@ dependencies:
   visibility_detector: ^0.4.0+2
   badges: ^3.1.2
   flutter_dotenv: ^5.2.1
+  fluttertoast: ^8.2.11
 
   google_fonts: ^6.2.1
   # The following adds the Cupertino Icons font to your application.

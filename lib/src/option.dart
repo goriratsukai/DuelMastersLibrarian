@@ -54,6 +54,7 @@ class OptionScreen extends ConsumerWidget {
         );
       }
       if (next is AsyncData && previous is AsyncLoading) {
+        ScaffoldMessenger.of(context).removeCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('カードデータのダウンロードが完了しました'),
