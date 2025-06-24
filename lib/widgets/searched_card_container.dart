@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:dml/source/card_data.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 import '../provider/build_deck_provider.dart';
 
@@ -60,7 +61,7 @@ class _DeletableCardContainerState extends ConsumerState<DeletableCardContainer>
         // 下向きに一定距離（今回は50px）以上ドラッグされていたら削除
         if (_dragY > 50) {
           // Providerを呼び出してカードを削除！
-          ref.read(buildDeckProvider.notifier).removeDeck(widget.index);
+          ref.read(buildDeckProvider.notifier).removeMainDeck(widget.index);
           // 削除したことをユーザーに通知
           ScaffoldMessenger.of(context).removeCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
@@ -70,8 +71,14 @@ class _DeletableCardContainerState extends ConsumerState<DeletableCardContainer>
             ),
           );
         }
+        // 上向きに一定距離（今回は50px）以上ドラッグされていたらデッキに追加
         if(_dragY < -50) {
-          ref.read(buildDeckProvider.notifier).addDeck(ref.read(buildDeckProvider.notifier).getDeck(widget.index));
+          final result = ref.read(buildDeckProvider.notifier).addMainDeck(ref.read(buildDeckProvider.notifier).getCardFromDeck(DeckType.main, widget.index));
+          if(result == 1) {
+            Fluttertoast.showToast(msg: '同名カードは4枚まで追加できます。${widget.searchedCard.card_name}');
+          } else if(result == 2) {
+            Fluttertoast.showToast(msg: 'メインデッキの上限に達しました。カードは60枚まで追加できます');
+          }
         }
         // ドラッグ終了したら、位置を元に戻す
         setState(() {

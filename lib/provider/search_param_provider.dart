@@ -483,9 +483,9 @@ class SearchParamNotifier extends Notifier<SearchParamState> {
     if(state.sortKey[0]){
       return 'order by card.object_id ${getSortOrderQuery()} nulls last';
     }else if(state.sortKey[1]){
-      return 'order by card.power ${getSortOrderQuery()} nulls last';
+      return 'order by card.power ${getSortOrderQuery()} nulls last, card.object_id';
     }else{
-      return 'order by card.cost ${getSortOrderQuery()} nulls last';
+      return 'order by card.cost ${getSortOrderQuery()} nulls last, card.object_id ';
     }
   }
 

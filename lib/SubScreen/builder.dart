@@ -57,48 +57,6 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> {
     final itemHeight = itemWidth / childAspectRatio;
 
     return Scaffold(
-      bottomNavigationBar: BottomAppBar(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 10.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                icon: const Icon(Icons.arrow_back),
-                label: const Text('戻る', style: TextStyle(fontSize: 10)),
-              ),
-              ElevatedButton.icon(
-                onPressed: () {
-                  ref.read(buildDeckProvider.notifier).resetDeck();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('デッキをクリアしました')),
-                  );
-                },
-                icon: const Icon(Icons.clear_all_rounded),
-                label: const Text('クリア', style: TextStyle(fontSize: 10)),
-              ),
-              // このボタンはAppBarに移動したので、コメントアウトか削除
-              ElevatedButton.icon(
-                onPressed: () {
-                  ref.read(buildDeckProvider.notifier).sortDeck;
-                },
-                icon: const Icon(Icons.sort_rounded),
-                label: const Text('並べ替え', style: TextStyle(fontSize: 10)),
-              ),
-              ElevatedButton.icon(
-                onPressed: () {
-                  print('保存ボタンが押されたよ！');
-                },
-                icon: const Icon(Icons.save_rounded),
-                label: const Text('保存', style: TextStyle(fontSize: 10)),
-              ),
-            ],
-          ),
-        ),
-      ),
       appBar: AppBar(
         title: const Text('デッキ作る画面'),
         leading: IconButton(onPressed: () => {Navigator.pop(context)}, icon: const Icon(Icons.arrow_back)),
@@ -109,10 +67,10 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> {
             tooltip: 'テスト入替',
             onPressed: () {
               // デッキにカードが2枚以上あるか確認
-              if (ref.read(buildDeckProvider).length >= 2) {
+              if (ref.read(buildDeckProvider).mainDeck.length >= 2) {
                 print('テストボタンが押されました: 0番目と1番目を入れ替えます');
                 // Providerを直接呼び出して、0番目と1番目のカードを入れ替える
-                ref.read(buildDeckProvider.notifier).swapCards(0, 1);
+                ref.read(buildDeckProvider.notifier).swapCards(DeckType.main,0, 1);
               } else {
                 print('入れ替えにはカードが2枚以上必要です');
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -150,7 +108,7 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> {
                           ),
                           TextButton(
                             onPressed: () {
-                              ref.read(buildDeckProvider.notifier).resetDeck();
+                              ref.read(buildDeckProvider.notifier).resetMainDeck();
                               Navigator.of(buildContext).pop(); // ダイアログを閉じる
                             },
                             child: Text('削除'),
@@ -232,9 +190,9 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> {
                     return GridView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        itemCount: buildDeck.length,
+                        itemCount: buildDeck.mainDeck.length,
                         itemBuilder: (context, index) {
-                          final card = buildDeck[index];
+                          final card = buildDeck.mainDeck[index];
 
                           // debug print
                           print('index: $index, card_name: ${card.card_name}, hashCode: ${card.hashCode}');
@@ -273,7 +231,7 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> {
                                 },
                                 onAcceptWithDetails: (fromIndex) {
                                   // カードを入れ替える
-                                  ref.read(buildDeckProvider.notifier).swapCards(fromIndex.data, index);
+                                  ref.read(buildDeckProvider.notifier).swapCards(DeckType.main,fromIndex.data, index);
                                 },
                               ),
                             );
@@ -292,16 +250,23 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> {
               return true;
             },
             onAcceptWithDetails: (card) {
-              final result = ref.read(buildDeckProvider.notifier).addDeck(card.data);
+              final result = ref.read(buildDeckProvider.notifier).addMainDeck(card.data);
               if (result == 1) {
                 Fluttertoast.showToast(msg: '同名カードは4枚まで追加できます。${card.data.card_name}');
               } else if (result == 2) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                  content: Text('メインデッキの上限に達しました。カードは60枚まで追加できます'),
-                ));
+                Fluttertoast.showToast(msg: 'メインデッキの上限に達しました。カードは60枚まで追加できます');
               }
             },
           ),
+          BottomNavigationBar(items: const <BottomNavigationBarItem>[
+            BottomNavigationBarItem(icon: Icon(Icons.qr_code),label: 'メインデッキ'
+            ),
+            BottomNavigationBarItem(icon: Icon(Icons.qr_code),label: '超次元/GR'
+            ),
+            BottomNavigationBarItem(icon: Icon(Icons.qr_code),label: ''
+            ),
+          ],),
+
           // 検索結果エリア
           Container(
             color: Theme.of(context).colorScheme.secondaryContainer,
