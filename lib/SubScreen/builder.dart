@@ -44,6 +44,11 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> {
   @override
   Widget build(BuildContext context) {
 
+    /// 名前検索欄（状態）が更新されたら画面にも反映する
+    ref.listen(searchParamProvider.select((value) => value.name), (_, next){
+      if(_nameController.text != next) _nameController.text = next;
+    });
+
     final asyncSearchResults = ref.watch(searchResultsProvider);
     // final buildDeck = ref.watch(buildDeckProvider);
 
@@ -258,15 +263,6 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> {
               }
             },
           ),
-          BottomNavigationBar(items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(icon: Icon(Icons.qr_code),label: 'メインデッキ'
-            ),
-            BottomNavigationBarItem(icon: Icon(Icons.qr_code),label: '超次元/GR'
-            ),
-            BottomNavigationBarItem(icon: Icon(Icons.qr_code),label: ''
-            ),
-          ],),
-
           // 検索結果エリア
           Container(
             color: Theme.of(context).colorScheme.secondaryContainer,

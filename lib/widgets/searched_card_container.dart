@@ -161,7 +161,7 @@ class DraggableCardContainer extends StatelessWidget {
             ))
                 // フルスクリーン表示を解除したあと、自動でフォーカスを取る動作を抑制
                 .then((_) {
-              FocusScope.of(context).unfocus();
+              FocusScope.of(context).requestFocus(FocusNode());
             });
           },
           child: Hero(
@@ -221,7 +221,7 @@ class TestCardContainer extends StatelessWidget {
           ))
               // フルスクリーン表示を解除したあと、自動でフォーカスを取る動作を抑制
               .then((_) {
-            FocusScope.of(context).unfocus();
+            FocusScope.of(context).requestFocus(FocusNode());
           });
         },
         child: Hero(

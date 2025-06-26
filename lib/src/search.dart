@@ -28,11 +28,19 @@ class SearchScreen extends ConsumerStatefulWidget {
 }
 
 class SearchScreenState extends ConsumerState<SearchScreen> {
-  final _textController = TextEditingController();
+  late final TextEditingController _nameController;
+
+  @override
+  void initState() {
+    _nameController = TextEditingController(text: ref.read(searchParamProvider).name);
+    super.initState();
+
+  }
+
 
   @override
   void dispose() {
-    _textController.dispose();
+    _nameController.dispose();
     super.dispose();
   }
 
@@ -43,8 +51,8 @@ class SearchScreenState extends ConsumerState<SearchScreen> {
     final asyncSearchResults = ref.watch(searchResultsProvider);
 
     ref.listen(searchParamProvider.select((value) => value.name), (_, next) {
-      if (_textController.text != next) {
-        _textController.text = next;
+      if (_nameController.text != next) {
+        _nameController.text = next;
       }
     });
 
@@ -66,7 +74,7 @@ class SearchScreenState extends ConsumerState<SearchScreen> {
                     elevation: 4.0,
                     borderRadius: BorderRadius.circular(30.0),
                     child: TextFormField(
-                      controller: _textController,
+                      controller: _nameController,
                       textCapitalization: TextCapitalization.words,
                       onChanged: (text) {
                         ref.read(searchParamProvider.notifier).setName(text);
