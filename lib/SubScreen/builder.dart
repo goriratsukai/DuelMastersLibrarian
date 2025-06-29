@@ -169,9 +169,9 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> with TickerPr
                 onPressed: _isReorderMode
                     ? null
                     : () {
-                  showMultiPageDialog(context);
-                  FocusScope.of(context).unfocus();
-                },
+                        showMultiPageDialog(context);
+                        FocusScope.of(context).unfocus();
+                      },
                 heroTag: 'optionFAB',
                 child: const Icon(Icons.tune),
               ),
@@ -179,203 +179,275 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> with TickerPr
           )),
       body: SafeArea(
           child: Stack(children: [
-            Column(spacing: 10, children: [
-              // デッキエリア
-              Column(
-                children: [
-                  TabBar(
-                    controller: _tabController,
-                    tabs: const [
-                      Tab(text: 'メインデッキ'),
-                      Tab(text: '外部デッキ'),
-                    ],
-                  ),
-                  SizedBox(
-                    height: deckAreaHeight,
-                    child: TabBarView(
-                      physics: const NeverScrollableScrollPhysics(), // スワイプ無効
-                      controller: _tabController,
-                      children: [
-                        // メインデッキ表示
-                        _buildMainDeckArea(deckAreaHeight, crossAxisCount, childAspectRatio, itemWidth, itemHeight),
-                        // 外部デッキ表示
-                        _buildExternalDeckArea(),
-                      ],
-                    ),
-                  ),
+        Column(spacing: 10, children: [
+          // デッキエリア
+          Column(
+            children: [
+              TabBar(
+                controller: _tabController,
+                tabs: const [
+                  Tab(text: 'メインデッキ'),
+                  Tab(text: '外部デッキ'),
                 ],
               ),
-              // 検索結果エリア
-              Container(
-                color: Theme.of(context).colorScheme.secondaryContainer,
-                width: double.infinity,
-                height: deviceWidth * 2.8 / 10,
-                child: asyncSearchResults.when(
-                  data: (results) {
-                    if (results.isEmpty) {
-                      return const Center(
-                        child: Text('検索結果はありません。'),
+              SizedBox(
+                  height: deckAreaHeight,
+                  child: DragTarget<SearchCard>(
+                    builder: (context, candidateData, rejectedData) {
+                      return TabBarView(
+                        physics: const NeverScrollableScrollPhysics(), // スワイプ無効
+                        controller: _tabController,
+                        children: [
+                          // メインデッキ表示
+                          _buildMainDeckArea(deckAreaHeight, crossAxisCount, childAspectRatio, itemWidth, itemHeight),
+                          // 外部デッキ表示
+                          _buildExternalDeckArea(deckAreaHeight, crossAxisCount, childAspectRatio, itemWidth, itemHeight),
+                        ],
                       );
-                    }
-                    return ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      shrinkWrap: true,
-                      itemCount: results.length,
-                      itemBuilder: (context, index) {
-                        return DraggableCardContainer(
-                          searchedCard: results[index],
-                          height: deviceWidth * 1.4 / 5,
-                          width: deviceWidth / 5,
-                          padding: 1,
-                        );
-                      },
+                    },
+                    onWillAcceptWithDetails: (details) {
+                      return true;
+                    },
+                    onAcceptWithDetails: (card) {
+                      final result = ref.read(buildDeckProvider.notifier).addDeck(card.data);
+                      print(card.data.card_name);
+                      print(card.data.image_name);
+                      print(card.data.object_id);
+                      print(card.data.belong_deck);
+                      if (result == 1) {
+                        Fluttertoast.showToast(msg: '同名カードは4枚まで追加できます。${card.data.card_name}');
+                      } else if (result == 2) {
+                        Fluttertoast.showToast(msg: 'メインデッキの上限に達しました。カードは60枚まで追加できます');
+                      } else if (result == 3) {
+                        Fluttertoast.showToast(msg: '同名カードは2枚まで追加できます。${card.data.card_name}');
+                      } else if (result == 4) {
+                        Fluttertoast.showToast(msg: 'GRゾーンの上限に達しました。カードは12枚まで追加できます');
+                      } else if (result == 5) {
+                        Fluttertoast.showToast(msg: '超次元ーンの上限に達しました。カードは8枚まで追加できます');
+                      }
+                    },
+                  )),
+            ],
+          ),
+          // 検索結果エリア
+          Container(
+            color: Theme.of(context).colorScheme.secondaryContainer,
+            width: double.infinity,
+            height: deviceWidth * 2.8 / 10,
+            child: asyncSearchResults.when(
+              data: (results) {
+                if (results.isEmpty) {
+                  return const Center(
+                    child: Text('検索結果はありません。'),
+                  );
+                }
+                return ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  shrinkWrap: true,
+                  itemCount: results.length,
+                  itemBuilder: (context, index) {
+                    return DraggableCardContainer(
+                      searchedCard: results[index],
+                      height: deviceWidth * 1.4 / 5,
+                      width: deviceWidth / 5,
+                      padding: 1,
                     );
                   },
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (error, stackTrace) => Center(child: Text(error.toString())),
-                ),
-              )
-            ]),
-            if (_isReorderMode)
-              Column(
-                children: [
-                  SizedBox(height: deckAreaHeight + 48), // TabBarの高さ分を追加
-                  Expanded(
-                    child: Container(
-                      color: Colors.black.withOpacity(0.5),
-                      alignment: Alignment.center,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                        child: Text(
-                          'デッキのカードをドラッグ＆ドロップして\n好きな順番に並び替えよう！',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            shadows: [
-                              Shadow(
-                                blurRadius: 8.0,
-                                color: Colors.black.withAlpha(150),
-                                offset: const Offset(2.0, 2.0),
-                              ),
-                            ],
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stackTrace) => Center(child: Text(error.toString())),
+            ),
+          )
+        ]),
+        if (_isReorderMode)
+          Column(
+            children: [
+              SizedBox(height: deckAreaHeight + 48), // TabBarの高さ分を追加
+              Expanded(
+                child: Container(
+                  color: Colors.black.withOpacity(0.5),
+                  alignment: Alignment.center,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Text(
+                      'デッキのカードをドラッグ＆ドロップして\n好きな順番に並び替えよう！',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        shadows: [
+                          Shadow(
+                            blurRadius: 8.0,
+                            color: Colors.black.withAlpha(150),
+                            offset: const Offset(2.0, 2.0),
                           ),
-                          textAlign: TextAlign.center,
-                        ),
+                        ],
                       ),
+                      textAlign: TextAlign.center,
                     ),
                   ),
-                ],
+                ),
               ),
-          ])),
+            ],
+          ),
+      ])),
     );
   }
 
   // メインデッキのエリアを構築するメソッド
   Widget _buildMainDeckArea(double deckAreaHeight, int crossAxisCount, double childAspectRatio, double itemWidth, double itemHeight) {
-    return DragTarget<SearchCard>(
-      builder: (context, candidateData, rejectedData) {
-        return Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.secondaryContainer,
-            ),
-            width: double.infinity,
-            height: deckAreaHeight,
-            child: Consumer(builder: (context, ref, child) {
-              final buildDeck = ref.watch(buildDeckProvider);
-              return GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: buildDeck.mainDeck.length,
-                  itemBuilder: (context, index) {
-                    final card = buildDeck.mainDeck[index];
-                    final cardWidget = DeletableCardContainer(
-                        searchedCard: card,
-                        index: index,
-                        isReorderMode: _isReorderMode);
-                    Widget item = cardWidget;
-
-                    if (_isReorderMode) {
-                      item = Draggable<int>(
-                        data: index,
-                        feedback: SizedBox(
-                          width: itemWidth,
-                          height: itemHeight,
-                          child: TestCardContainer(searchedCard: card, padding: 0),
-                        ),
-                        childWhenDragging: Opacity(
-                          opacity: 0.3,
-                          child: cardWidget,
-                        ),
-                        child: DragTarget<int>(
-                          builder: (context, candidateData, rejectedData) {
-                            return cardWidget;
-                          },
-                          onWillAcceptWithDetails: (fromIndex) {
-                            return fromIndex.data != index;
-                          },
-                          onAcceptWithDetails: (fromIndex) {
-                            ref.read(buildDeckProvider.notifier).swapCards(DeckType.main, fromIndex.data, index);
-                          },
-                        ),
-                      );
-                    }
-                    return KeyedSubtree(key: ValueKey(card), child: item);
-                  },
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: crossAxisCount,
-                    childAspectRatio: childAspectRatio,
-                  ));
-            }));
-      },
-      onWillAcceptWithDetails: (details) {
-        return true;
-      },
-      onAcceptWithDetails: (card) {
-        final result = ref.read(buildDeckProvider.notifier).addMainDeck(card.data);
-        if (result == 1) {
-          Fluttertoast.showToast(msg: '同名カードは4枚まで追加できます。${card.data.card_name}');
-        } else if (result == 2) {
-          Fluttertoast.showToast(msg: 'メインデッキの上限に達しました。カードは60枚まで追加できます');
-        }
-      },
-    );
+    return Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.secondaryContainer,
+        ),
+        width: double.infinity,
+        height: deckAreaHeight,
+        child: Consumer(builder: (context, ref, child) {
+          final buildDeck = ref.watch(buildDeckProvider);
+          return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: buildDeck.mainDeck.length,
+              itemBuilder: (context, index) {
+                final card = buildDeck.mainDeck[index];
+                final cardWidget = DeletableCardContainer(searchedCard: card, index: index, isReorderMode: _isReorderMode);
+                Widget item = cardWidget;
+                if (_isReorderMode) {
+                  item = Draggable<int>(
+                    data: index,
+                    feedback: SizedBox(
+                      width: itemWidth,
+                      height: itemHeight,
+                      child: TestCardContainer(searchedCard: card, padding: 0),
+                    ),
+                    childWhenDragging: Opacity(
+                      opacity: 0.3,
+                      child: cardWidget,
+                    ),
+                    child: DragTarget<int>(
+                      builder: (context, candidateData, rejectedData) {
+                        return cardWidget;
+                      },
+                      onWillAcceptWithDetails: (fromIndex) {
+                        return fromIndex.data != index;
+                      },
+                      onAcceptWithDetails: (fromIndex) {
+                        ref.read(buildDeckProvider.notifier).swapCards(DeckType.main, fromIndex.data, index);
+                      },
+                    ),
+                  );
+                }
+                return KeyedSubtree(key: ValueKey(card), child: item);
+              },
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                childAspectRatio: childAspectRatio,
+              ));
+        }));
   }
 
   // 外部デッキのエリアを構築するメソッド
-  Widget _buildExternalDeckArea() {
-    return Container(
-      color: Theme.of(context).colorScheme.surfaceVariant,
-      child: Column(
-        children: [
-          // 超次元デッキエリア
-          Expanded(
-            child: Container(
-              margin: const EdgeInsets.all(4.0),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey),
-                borderRadius: BorderRadius.circular(4.0),
-              ),
-              child: const Center(
-                child: Text('超次元デッキ'),
-              ),
-            ),
-          ),
-          // GRデッキエリア
-          Expanded(
-            child: Container(
-              margin: const EdgeInsets.all(4.0),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey),
-                borderRadius: BorderRadius.circular(4.0),
-              ),
-              child: const Center(
-                child: Text('GRデッキ'),
-              ),
-            ),
-          ),
-        ],
-      ),
+  Widget _buildExternalDeckArea(double deckAreaHeight, int crossAxisCount, double childAspectRatio, double itemWidth, double itemHeight) {
+    return Column(
+      children: [
+        // 超次元デッキエリア
+        Container(
+          color: Theme.of(context).colorScheme.secondaryContainer,
+          child: Consumer(builder: (context, ref, child) {
+            final buildDeck = ref.watch(buildDeckProvider);
+            return GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: buildDeck.uberDimensionDeck.length,
+                itemBuilder: (context, index) {
+                  final card = buildDeck.uberDimensionDeck[index];
+                  final cardWidget = DeletableCardContainer(searchedCard: card, index: index, isReorderMode: _isReorderMode);
+                  Widget item = cardWidget;
+                  if (_isReorderMode) {
+                    item = Draggable<int>(
+                      data: index,
+                      feedback: SizedBox(
+                        width: itemWidth,
+                        height: itemHeight,
+                        child: TestCardContainer(searchedCard: card, padding: 0),
+                      ),
+                      childWhenDragging: Opacity(
+                        opacity: 0.3,
+                        child: cardWidget,
+                      ),
+                      child: DragTarget<int>(
+                        builder: (context, candidateData, rejectedData) {
+                          return cardWidget;
+                        },
+                        onWillAcceptWithDetails: (fromIndex) {
+                          return fromIndex.data != index;
+                        },
+                        onAcceptWithDetails: (fromIndex) {
+                          ref.read(buildDeckProvider.notifier).swapCards(DeckType.uberDimension, fromIndex.data, index);
+                        },
+                      ),
+                    );
+                  }
+                  return KeyedSubtree(key: ValueKey(card), child: item);
+                },
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  childAspectRatio: childAspectRatio,
+                ));
+          }),
+        ),
+        const Divider(
+          height: 1,
+          thickness: 1,
+        ),
+        // GRデッキエリア
+        Container(
+          color: Theme.of(context).colorScheme.secondaryContainer,
+          child: Consumer(builder: (context, ref, child) {
+            final buildDeck = ref.watch(buildDeckProvider);
+            return GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: buildDeck.grDeck.length,
+                itemBuilder: (context, index) {
+                  final card = buildDeck.grDeck[index];
+                  final cardWidget = DeletableCardContainer(searchedCard: card, index: index, isReorderMode: _isReorderMode);
+                  Widget item = cardWidget;
+                  if (_isReorderMode) {
+                    item = Draggable<int>(
+                      data: index,
+                      feedback: SizedBox(
+                        width: itemWidth,
+                        height: itemHeight,
+                        child: TestCardContainer(searchedCard: card, padding: 0),
+                      ),
+                      childWhenDragging: Opacity(
+                        opacity: 0.3,
+                        child: cardWidget,
+                      ),
+                      child: DragTarget<int>(
+                        builder: (context, candidateData, rejectedData) {
+                          return cardWidget;
+                        },
+                        onWillAcceptWithDetails: (fromIndex) {
+                          return fromIndex.data != index;
+                        },
+                        onAcceptWithDetails: (fromIndex) {
+                          ref.read(buildDeckProvider.notifier).swapCards(DeckType.gr, fromIndex.data, index);
+                        },
+                      ),
+                    );
+                  }
+                  return KeyedSubtree(key: ValueKey(card), child: item);
+                },
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  childAspectRatio: childAspectRatio,
+                ));
+          }),
+        ),
+      ],
     );
   }
 }

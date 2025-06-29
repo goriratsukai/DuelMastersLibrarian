@@ -21,7 +21,7 @@ class SearchParamState {
     this.civil6 = const [false, true, false],
     this.checkCivils = false,
     this.sameName = true,
-    this.fuzzySearch = true,
+    this.fuzzySearch = false,
     this.sortKey = const[true,false,false],
     this.sortOrder = const[false,true],
   });
@@ -307,7 +307,11 @@ class SearchParamNotifier extends Notifier<SearchParamState> {
         join link_module_race lmr
         on lmr.module_id = cm.module_id
         
-        where cm.card_name like '%${getNameQuery()}%'
+        where 
+        (
+          cm.card_name like '%${getNameQuery()}%'
+          or cm.ruby like '%${getNameQuery()}%'
+        )
         and cm.card_type like '%${getTypeQuery()}%'
         and cm.ability_text like '%${getTextQuery()}%'
         and lmr.race_id in (select race_id from master_race where race like '%${getRaceQuery()}%')
@@ -333,12 +337,16 @@ class SearchParamNotifier extends Notifier<SearchParamState> {
   }
 
   String getNameQuery() {
+    // 入力されたカタカナを全てひらがなに変換
+    final name = convertKana(state.name);
+
     if (state.fuzzySearch) {
       //　あいまい検索が有効なとき、各シンボルの間に%を挿入
-      List<String> symbols = state.name.split('');
+      List<String> symbols = name.split('');
       return symbols.join('%');
     }
-    return state.name;
+    // あいまい検索が無効なとき、そのまま返す
+    return name;
   }
 
   String getRaceQuery() {
@@ -495,6 +503,32 @@ class SearchParamNotifier extends Notifier<SearchParamState> {
     }else{
       return 'desc';
     }
+  }
+
+  String convertKana(String text) {
+    final buffer = StringBuffer();
+
+    // 空文字列の時はすぐreturn
+    if (text == '') {
+      return '';
+    }
+
+    // カタカナの範囲を指定
+    const katakanaStart = 0x30A1;
+    const katakanaEnd = 0x30F6;
+
+    // カタカナとひらがなのコードポイント差
+    const katakanaOffset = 0x0060;
+
+    for (final rune in text.runes) {
+      // rune(文字コード)がカタカナの範囲内のとき、オフセットを引いてひらがなにする
+      if (rune >= katakanaStart && rune <= katakanaEnd) {
+        buffer.writeCharCode(rune - katakanaOffset);
+      } else {
+        buffer.writeCharCode(rune);
+      }
+    }
+    return buffer.toString();
   }
 }
 

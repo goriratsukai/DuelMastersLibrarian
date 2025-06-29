@@ -48,21 +48,52 @@ class BuildDeckNotifier extends Notifier<DeckState> {
   }
 
   // --- カード取得 ---
-  SearchCard getCardFromDeck(DeckType deckType, int index) {
-    switch (deckType) {
-      case DeckType.main:
+  SearchCard getCardFromDeck(SearchCard card, int index) {
+    switch (card.belong_deck) {
+      case 0:
         return state.mainDeck[index];
-      case DeckType.gr:
-        return state.grDeck[index];
-      case DeckType.uberDimension:
+      case 1:
         return state.uberDimensionDeck[index];
+      case 2:
+        return state.grDeck[index];
+    }
+    throw Exception('Invalid belong_deck value: ${card.belong_deck}');
+  }
+
+  // デッキ追加処理を集約
+  int addDeck(SearchCard card){
+    switch(card.belong_deck){
+      case 0:
+        return addMainDeck(card);
+      case 1:
+        return addUberDimensionDeck(card);
+      case 2:
+        return addGrDeck(card);
+      default:
+    }
+    return 0;
+  }
+
+  // デッキ削除処理を集約
+  void removeDeck(SearchCard card, int index){
+    switch(card.belong_deck){
+      case 0:
+        removeMainDeck(index);
+        break;
+      case 1:
+        removeUberDimensionDeck(index);
+        break;
+      case 2:
+        removeGrDeck(index);
+        break;
     }
   }
+
 
   // --- メインデッキ操作 ---
 
   /// メインデッキにカードを追加する
-  /// 戻り値: 0 = 成功, 1 = 同名カード4枚制限, 2 = デッキ枚数上限
+  /// 戻り値: 0 = 成功, 1 = 同名カード4枚制限, 2 = メインデッキ枚数上限
   int addMainDeck(SearchCard card) {
     // デッキの上限は60枚
     if (state.mainDeck.length >= 60) {
@@ -106,22 +137,22 @@ class BuildDeckNotifier extends Notifier<DeckState> {
   // --- GRデッキ操作 ---
 
   /// GRデッキにカードを追加する
-  /// 戻り値: 0 = 成功, 1 = 同名カード4枚制限, 2 = デッキ枚数上限
+  /// 戻り値: 0 = 成功, 3 = 同名カード2枚制限, 4 = GRデッキ枚数上限
   int addGrDeck(SearchCard card) {
     // デッキの上限は12枚
     if (state.grDeck.length >= 12) {
       print('GRデッキの上限に達しました');
-      return 2;
+      return 4;
     }
 
     final count = state.grDeck.where((c) => c.object_id == card.object_id).length;
-    if(count < 4){
+    if(count < 2){
       state = state.copyWith(grDeck: [...state.grDeck, card]);
       print('GRデッキにカードを追加しました');
       return 0;
     }else{
-      print('GRデッキに同じカードが既に4枚あります');
-      return 1;
+      print('GRデッキに同じカードが既に2枚あります');
+      return 3;
     }
   }
 
@@ -146,12 +177,12 @@ class BuildDeckNotifier extends Notifier<DeckState> {
   // --- 超次元デッキ操作 ---
 
   /// 超次元デッキにカードを追加する
-  /// 戻り値: 0 = 成功, 1 = 同名カード4枚制限, 2 = デッキ枚数上限
+  /// 戻り値: 0 = 成功, 1 = 同名カード4枚制限, 5 = 超次元デッキ枚数上限
   int addUberDimensionDeck(SearchCard card) {
     // デッキの上限は8枚
     if (state.uberDimensionDeck.length >= 8) {
       print('超次元デッキの上限に達しました');
-      return 2;
+      return 5;
     }
     final count = state.uberDimensionDeck.where((c) => c.object_id == card.object_id).length;
     if(count < 4){

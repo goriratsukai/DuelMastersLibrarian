@@ -61,7 +61,7 @@ class _DeletableCardContainerState extends ConsumerState<DeletableCardContainer>
         // 下向きに一定距離（今回は50px）以上ドラッグされていたら削除
         if (_dragY > 50) {
           // Providerを呼び出してカードを削除！
-          ref.read(buildDeckProvider.notifier).removeMainDeck(widget.index);
+          ref.read(buildDeckProvider.notifier).removeDeck(widget.searchedCard,widget.index);
           // 削除したことをユーザーに通知
           ScaffoldMessenger.of(context).removeCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
@@ -73,7 +73,7 @@ class _DeletableCardContainerState extends ConsumerState<DeletableCardContainer>
         }
         // 上向きに一定距離（今回は50px）以上ドラッグされていたらデッキに追加
         if(_dragY < -50) {
-          final result = ref.read(buildDeckProvider.notifier).addMainDeck(ref.read(buildDeckProvider.notifier).getCardFromDeck(DeckType.main, widget.index));
+          final result = ref.read(buildDeckProvider.notifier).addDeck(ref.read(buildDeckProvider.notifier).getCardFromDeck(widget.searchedCard, widget.index));
           if(result == 1) {
             Fluttertoast.showToast(msg: '同名カードは4枚まで追加できます。${widget.searchedCard.card_name}');
           } else if(result == 2) {
