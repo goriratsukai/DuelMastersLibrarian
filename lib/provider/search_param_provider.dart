@@ -23,7 +23,7 @@ class SearchParamState {
     this.sameName = true,
     this.fuzzySearch = true,
     this.sortKey = const[true,false,false],
-    this.sortOrder = const[true,false],
+    this.sortOrder = const[false,true],
   });
 
   final String name;
@@ -293,9 +293,9 @@ class SearchParamNotifier extends Notifier<SearchParamState> {
 
   String getQuery() {
     String query = '''
-      select card.object_id object_id, card.card_name card_name, cp.image_name image_name
+      select card.object_id object_id, card.card_name card_name, card.belong_deck, cp.image_name image_name
       from (
-        select co.object_id object_id, card_name, cm.cost cost, cm.power power
+        select co.object_id object_id, card_name, cm.cost cost, cm.power power, co.belong_deck belong_deck
         from card_module cm
         
         join link_object_module lom

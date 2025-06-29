@@ -16,7 +16,8 @@ void showMultiPageDialog(BuildContext context){
       // StatefulBuilderを使うと、ダイアログの中で状態を保持できるんだ！
       return Scaffold(
         backgroundColor: Colors.transparent,
-        body: Center(
+        body: Align(
+          alignment: Alignment(0, 0.4),
           child: StatefulBuilder(
             builder: (BuildContext context, StateSetter setState) {
               // ページの内容をリストで用意しておくよ！

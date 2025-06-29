@@ -25,6 +25,7 @@ class SearchResultsNotifier extends AsyncNotifier<List<SearchCard>> {
         object_id: queryResults[i]['object_id'],
         card_name: queryResults[i]['card_name'],
         image_name: queryResults[i]['image_name'],
+        belong_deck: queryResults[i]['belong_deck'],
       );
     });
   }
