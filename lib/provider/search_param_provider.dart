@@ -293,7 +293,7 @@ class SearchParamNotifier extends Notifier<SearchParamState> {
 
   String getQuery() {
     String query = '''
-      select card.object_id object_id, card.card_name card_name, card.belong_deck, cp.image_name image_name
+      select card.object_id object_id, card.card_name card_name, card.belong_deck belong_deck, cp.image_name image_name, cp.physical_id physical_id
       from (
         select co.object_id object_id, card_name, cm.cost cost, cm.power power, co.belong_deck belong_deck
         from card_module cm

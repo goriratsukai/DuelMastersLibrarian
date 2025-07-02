@@ -17,21 +17,25 @@ class DeckState {
     this.mainDeck = const [],
     this.grDeck = const [],
     this.uberDimensionDeck = const [],
+    this.begining = const[],
   });
 
   final List<SearchCard> mainDeck;
   final List<SearchCard> grDeck;
   final List<SearchCard> uberDimensionDeck;
+  final List<SearchCard> begining;
 
   DeckState copyWith({
     List<SearchCard>? mainDeck,
     List<SearchCard>? grDeck,
     List<SearchCard>? uberDimensionDeck,
+    List<SearchCard>? begining,
   }) {
     return DeckState(
       mainDeck: mainDeck ?? this.mainDeck,
       grDeck: grDeck ?? this.grDeck,
       uberDimensionDeck: uberDimensionDeck ?? this.uberDimensionDeck,
+      begining: begining ?? this.begining,
     );
   }
 }
@@ -56,6 +60,8 @@ class BuildDeckNotifier extends Notifier<DeckState> {
         return state.uberDimensionDeck[index];
       case 2:
         return state.grDeck[index];
+      case 3:
+        return state.begining[index];
     }
     throw Exception('Invalid belong_deck value: ${card.belong_deck}');
   }
@@ -69,9 +75,10 @@ class BuildDeckNotifier extends Notifier<DeckState> {
         return addUberDimensionDeck(card);
       case 2:
         return addGrDeck(card);
-      default:
+        case 3:
+        return addBeginingDeck(card);
     }
-    return 0;
+    throw Exception('Invalid belong_deck value: ${card.belong_deck}');
   }
 
   // デッキ削除処理を集約
@@ -85,6 +92,9 @@ class BuildDeckNotifier extends Notifier<DeckState> {
         break;
       case 2:
         removeGrDeck(index);
+        break;
+      case 3:
+        removeBeginingDeck(index);
         break;
     }
   }
@@ -211,6 +221,32 @@ class BuildDeckNotifier extends Notifier<DeckState> {
   void sortUberDimensionDeck() {
     state = state.copyWith(uberDimensionDeck: _sortDeck(state.uberDimensionDeck));
   }
+
+  // ----ゲーム開始時にバトルゾーンに存在できるカード----
+
+  /// カードを追加する
+  /// 戻り値: 0 = 成功, 6 = 1枚制限
+  int addBeginingDeck(SearchCard card){
+    // 上限は1枚
+    if(state.begining.length >= 1){
+      return 1;
+    }
+    state = state.copyWith(begining: [...state.begining, card]);
+    return 0;
+  }
+
+  /// カードを削除する
+  void removeBeginingDeck(int index){
+    final newList = List<SearchCard>.from(state.begining);
+    newList.removeAt(index);
+    state = state.copyWith(begining: newList);
+  }
+
+  /// リセットする
+  void resetBeginingDeck(){
+    state = state.copyWith(begining: []);
+  }
+
 
 
   // --- 共通・その他 ---

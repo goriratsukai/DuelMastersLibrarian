@@ -206,6 +206,13 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> with TickerPr
                       );
                     },
                     onWillAcceptWithDetails: (details) {
+                      // ここを修正！
+                      final card = details.data;
+                      if (card.belong_deck == 0) {
+                        _tabController.animateTo(0);
+                      } else {
+                        _tabController.animateTo(1);
+                      }
                       return true;
                     },
                     onAcceptWithDetails: (card) {
@@ -297,70 +304,81 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> with TickerPr
 
   // メインデッキのエリアを構築するメソッド
   Widget _buildMainDeckArea(double deckAreaHeight, int crossAxisCount, double childAspectRatio, double itemWidth, double itemHeight) {
-    return Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.secondaryContainer,
-        ),
-        width: double.infinity,
-        height: deckAreaHeight,
-        child: Consumer(builder: (context, ref, child) {
-          final buildDeck = ref.watch(buildDeckProvider);
-          return GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: buildDeck.mainDeck.length,
-              itemBuilder: (context, index) {
-                final card = buildDeck.mainDeck[index];
-                final cardWidget = DeletableCardContainer(searchedCard: card, index: index, isReorderMode: _isReorderMode);
-                Widget item = cardWidget;
-                if (_isReorderMode) {
-                  item = Draggable<int>(
-                    data: index,
-                    feedback: SizedBox(
-                      width: itemWidth,
-                      height: itemHeight,
-                      child: TestCardContainer(searchedCard: card, padding: 0),
-                    ),
-                    childWhenDragging: Opacity(
-                      opacity: 0.3,
-                      child: cardWidget,
-                    ),
-                    child: DragTarget<int>(
-                      builder: (context, candidateData, rejectedData) {
-                        return cardWidget;
-                      },
-                      onWillAcceptWithDetails: (fromIndex) {
-                        return fromIndex.data != index;
-                      },
-                      onAcceptWithDetails: (fromIndex) {
-                        ref.read(buildDeckProvider.notifier).swapCards(DeckType.main, fromIndex.data, index);
-                      },
-                    ),
-                  );
-                }
-                return KeyedSubtree(key: ValueKey(card), child: item);
-              },
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: crossAxisCount,
-                childAspectRatio: childAspectRatio,
-              ));
-        }));
+    const int mainDeckMax = 40;
+
+    return Consumer(builder: (context, ref, child) {
+      final buildDeck = ref.watch(buildDeckProvider);
+      return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: (mainDeckMax > buildDeck.mainDeck.length) ? mainDeckMax : buildDeck.mainDeck.length + 1,
+          itemBuilder: (context, index) {
+            if (index < buildDeck.mainDeck.length) {
+              final card = buildDeck.mainDeck[index];
+              final cardWidget = DeletableCardContainer(searchedCard: card, index: index, isReorderMode: _isReorderMode);
+              Widget item = cardWidget;
+              if (_isReorderMode) {
+                item = Draggable<int>(
+                  data: index,
+                  feedback: SizedBox(
+                    width: itemWidth,
+                    height: itemHeight,
+                    child: TestCardContainer(searchedCard: card, padding: 0),
+                  ),
+                  childWhenDragging: Opacity(
+                    opacity: 0.3,
+                    child: cardWidget,
+                  ),
+                  child: DragTarget<int>(
+                    builder: (context, candidateData, rejectedData) {
+                      return cardWidget;
+                    },
+                    onWillAcceptWithDetails: (fromIndex) {
+                      return fromIndex.data != index;
+                    },
+                    onAcceptWithDetails: (fromIndex) {
+                      ref.read(buildDeckProvider.notifier).swapCards(DeckType.main, fromIndex.data, index);
+                    },
+                  ),
+                );
+              }
+              return KeyedSubtree(key: ValueKey(card), child: item);
+            } else {
+              return Container(
+                  margin: const EdgeInsets.all(2.0),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.secondaryContainer,
+                    borderRadius: BorderRadius.circular(4.0),
+                  ));
+            }
+          },
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            childAspectRatio: childAspectRatio,
+          ));
+    });
   }
 
   // 外部デッキのエリアを構築するメソッド
   Widget _buildExternalDeckArea(double deckAreaHeight, int crossAxisCount, double childAspectRatio, double itemWidth, double itemHeight) {
+    const int uberDimensionDeckMax = 8;
+    const int grDeckMax = 12;
+    const int beginingMax = 1;
+
     return Column(
       children: [
+        const Text("超次元ゾーン"),
         // 超次元デッキエリア
-        Container(
-          color: Theme.of(context).colorScheme.secondaryContainer,
-          child: Consumer(builder: (context, ref, child) {
-            final buildDeck = ref.watch(buildDeckProvider);
-            return GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: buildDeck.uberDimensionDeck.length,
-                itemBuilder: (context, index) {
+        Consumer(builder: (context, ref, child) {
+          final buildDeck = ref.watch(buildDeckProvider);
+          return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              // itemCountは最大数の8に固定
+              itemCount: uberDimensionDeckMax,
+              itemBuilder: (context, index) {
+                // インデックスが現在のデッキ枚数より少ない場合はカードを表示
+                if (index < buildDeck.uberDimensionDeck.length) {
                   final card = buildDeck.uberDimensionDeck[index];
                   final cardWidget = DeletableCardContainer(searchedCard: card, index: index, isReorderMode: _isReorderMode);
                   Widget item = cardWidget;
@@ -390,27 +408,38 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> with TickerPr
                     );
                   }
                   return KeyedSubtree(key: ValueKey(card), child: item);
-                },
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxisCount,
-                  childAspectRatio: childAspectRatio,
-                ));
-          }),
-        ),
+                } else {
+                  // そうでなければ、プレースホルダーのコンテナを表示
+                  return Container(
+                    margin: const EdgeInsets.all(2.0),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.secondaryContainer,
+                      borderRadius: BorderRadius.circular(4.0),
+                    ),
+                  );
+                }
+              },
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                childAspectRatio: childAspectRatio,
+              ));
+        }),
         const Divider(
-          height: 1,
-          thickness: 1,
+          height: 16,
+          thickness: 4,
         ),
+        const Text("GRゾーン"),
         // GRデッキエリア
-        Container(
-          color: Theme.of(context).colorScheme.secondaryContainer,
-          child: Consumer(builder: (context, ref, child) {
-            final buildDeck = ref.watch(buildDeckProvider);
-            return GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: buildDeck.grDeck.length,
-                itemBuilder: (context, index) {
+        Consumer(builder: (context, ref, child) {
+          final buildDeck = ref.watch(buildDeckProvider);
+          return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              // itemCountは最大数の12に固定
+              itemCount: grDeckMax,
+              itemBuilder: (context, index) {
+                // インデックスが現在のデッキ枚数より少ない場合はカードを表示
+                if (index < buildDeck.grDeck.length) {
                   final card = buildDeck.grDeck[index];
                   final cardWidget = DeletableCardContainer(searchedCard: card, index: index, isReorderMode: _isReorderMode);
                   Widget item = cardWidget;
@@ -439,6 +468,66 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> with TickerPr
                       ),
                     );
                   }
+                  return KeyedSubtree(key: ValueKey(card), child: item);
+                } else {
+                  // そうでなければ、プレースホルダーのコンテナを表示
+                  return Container(
+                    margin: const EdgeInsets.all(2.0),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.secondaryContainer,
+                      borderRadius: BorderRadius.circular(4.0),
+                    ),
+                  );
+                }
+              },
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                childAspectRatio: childAspectRatio,
+              ));
+        }),
+
+        const Divider(
+          height: 16,
+          thickness: 4,
+        ),
+        // ゲーム開始時にバトルゾーンにあるカードエリア
+        Container(
+          color: Theme.of(context).colorScheme.secondaryContainer,
+          child: Consumer(builder: (context, ref, child) {
+            final buildDeck = ref.watch(buildDeckProvider);
+            return GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: buildDeck.begining.length,
+                itemBuilder: (context, index) {
+                  final card = buildDeck.begining[index];
+                  final cardWidget = DeletableCardContainer(searchedCard: card, index: index, isReorderMode: _isReorderMode);
+                  Widget item = cardWidget;
+                  // if (_isReorderMode) {
+                  //   item = Draggable<int>(
+                  //     data: index,
+                  //     feedback: SizedBox(
+                  //       width: itemWidth,
+                  //       height: itemHeight,
+                  //       child: TestCardContainer(searchedCard: card, padding: 0),
+                  //     ),
+                  //     childWhenDragging: Opacity(
+                  //       opacity: 0.3,
+                  //       child: cardWidget,
+                  //     ),
+                  //     child: DragTarget<int>(
+                  //       builder: (context, candidateData, rejectedData) {
+                  //         return cardWidget;
+                  //       },
+                  //       onWillAcceptWithDetails: (fromIndex) {
+                  //         return fromIndex.data != index;
+                  //       },
+                  //       onAcceptWithDetails: (fromIndex) {
+                  //         ref.read(buildDeckProvider.notifier).swapCards(DeckType.gr, fromIndex.data, index);
+                  //       },
+                  //     ),
+                  //   );
+                  // }
                   return KeyedSubtree(key: ValueKey(card), child: item);
                 },
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
