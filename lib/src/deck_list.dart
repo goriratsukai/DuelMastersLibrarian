@@ -23,8 +23,8 @@ class _DeckListScreenState extends ConsumerState<DeckListScreen> {
 
   @override
   void initState() {
-    super.initState();
     _loadDecks();
+    super.initState();
   }
 
   // DBからデッキリストを読み込む
