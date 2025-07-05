@@ -1,6 +1,9 @@
 import 'package:riverpod/riverpod.dart';
 import 'package:meta/meta.dart';
+import 'package:uuid/uuid.dart';
 
+import '../helper/database_helper.dart';
+import '../model/deck.dart';
 import '../source/card_data.dart';
 
 // デッキの種類を定義するenum
@@ -8,6 +11,7 @@ enum DeckType {
   main,
   gr,
   uberDimension,
+  begining,
 }
 
 // 3つのデッキ（メイン、GR、超次元）の状態を管理するクラス
@@ -18,24 +22,36 @@ class DeckState {
     this.grDeck = const [],
     this.uberDimensionDeck = const [],
     this.begining = const[],
+    this.deckName = '',
+    this.deckFormat = '',
+    this.deckLevel = '',
   });
 
   final List<SearchCard> mainDeck;
   final List<SearchCard> grDeck;
   final List<SearchCard> uberDimensionDeck;
   final List<SearchCard> begining;
+  final String deckName;
+  final String deckFormat;
+  final String deckLevel;
 
   DeckState copyWith({
     List<SearchCard>? mainDeck,
     List<SearchCard>? grDeck,
     List<SearchCard>? uberDimensionDeck,
     List<SearchCard>? begining,
+    String? deckName,
+    String? deckFormat,
+    String? deckLevel,
   }) {
     return DeckState(
       mainDeck: mainDeck ?? this.mainDeck,
       grDeck: grDeck ?? this.grDeck,
       uberDimensionDeck: uberDimensionDeck ?? this.uberDimensionDeck,
       begining: begining ?? this.begining,
+      deckName: deckName ?? this.deckName,
+      deckFormat: deckFormat ?? this.deckFormat,
+      deckLevel: deckLevel ?? this.deckLevel,
     );
   }
 }
@@ -269,6 +285,8 @@ class BuildDeckNotifier extends Notifier<DeckState> {
       case DeckType.uberDimension:
         targetDeck = state.uberDimensionDeck;
         break;
+      case DeckType.begining:
+        return;
     }
     // インデックスの範囲チェック
     if (index1 < 0 || index1 >= targetDeck.length || index2 < 0 || index2 >= targetDeck.length) {
@@ -290,11 +308,51 @@ class BuildDeckNotifier extends Notifier<DeckState> {
       case DeckType.uberDimension:
         state = state.copyWith(uberDimensionDeck: newList);
         break;
+      case DeckType.begining:
+        return;
     }
   }
 
-  void saveDeck(){
-    // 未実装
+  // デッキ情報更新
+  void updateDeckInfo({String? name, String? format, String? level}) {
+    state = state.copyWith(
+      deckName: name,
+      deckFormat: format,
+      deckLevel: level,
+    );
+  }
+
+  /// デッキ保存
+  Future<bool> saveDeck() async {
+    try {
+      final now = DateTime.now();
+      const uuid = Uuid();
+      final newDeck = Deck(
+        deckId: uuid.v4(),
+        deckName: state.deckName,
+        deckFormat: state.deckFormat,
+        deckLevel: state.deckLevel,
+        deckCountMain: state.mainDeck.length,
+        deckCountGr: state.grDeck.length,
+        deckCountUb: state.uberDimensionDeck.length,
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      await DatabaseHelper.instance.saveDeckTransaction(
+        newDeck,
+        state.mainDeck,
+        state.grDeck,
+        state.uberDimensionDeck,
+      );
+      // 保存成功後にstateを初期化
+      state = const DeckState(mainDeck: [], grDeck: [], uberDimensionDeck: []);
+      return true;
+    } catch (e) {
+      // エラーハンドリング
+      print('Failed to save deck: $e');
+      return false;
+    }
   }
 
   // 内部的なソート処理（枚数順 -> object_id順）

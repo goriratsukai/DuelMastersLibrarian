@@ -72,21 +72,6 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> with TickerPr
         leading: IconButton(onPressed: () => {Navigator.pop(context)}, icon: const Icon(Icons.arrow_back)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.swap_horiz),
-            tooltip: 'テスト入替',
-            onPressed: () {
-              if (ref.read(buildDeckProvider).mainDeck.length >= 2) {
-                print('テストボタンが押されました: 0番目と1番目を入れ替えます');
-                ref.read(buildDeckProvider.notifier).swapCards(DeckType.main, 0, 1);
-              } else {
-                print('入れ替えにはカードが2枚以上必要です');
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('入れ替えにはカードが2枚以上必要です')),
-                );
-              }
-            },
-          ),
-          IconButton(
             tooltip: '並び替えモード切替',
             icon: _isReorderMode ? const Icon(Icons.check) : const Icon(Icons.sort),
             onPressed: () {
@@ -112,7 +97,7 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> with TickerPr
                           ),
                           TextButton(
                             onPressed: () {
-                              ref.read(buildDeckProvider.notifier).resetMainDeck();
+                              ref.read(buildDeckProvider.notifier).resetAllDecks();
                               Navigator.of(buildContext).pop();
                             },
                             child: Text('削除'),
@@ -122,7 +107,7 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> with TickerPr
                     });
               },
               icon: const Icon(Icons.delete_rounded)),
-          IconButton(onPressed: () => {}, icon: const Icon(Icons.save_rounded)),
+          IconButton(onPressed: () => {_showSaveDialog(context, ref)}, icon: const Icon(Icons.save_rounded)),
         ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
@@ -537,6 +522,131 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> with TickerPr
           }),
         ),
       ],
+    );
+  }
+  // 保存ダイアログを表示するメソッド
+  void _showSaveDialog(BuildContext context, WidgetRef ref) {
+    final formKey = GlobalKey<FormState>();
+    final deckNameController = TextEditingController(text: ref.read(buildDeckProvider).deckName);
+
+    // ダイアログの状態を保持する変数
+    String? selectedFormat = ref.read(buildDeckProvider).deckFormat;
+    String? selectedLevel = ref.read(buildDeckProvider).deckLevel;
+    // ドロップダウンの選択肢
+    final formatItems = ['オリジナル', 'アドバンス', '殿堂ゼロ'];
+    final levelItems = ['トーナメント', 'カジュアル', 'コンセプト'];
+    // Providerから取得した値が選択肢にない場合はnullに設定し、エラーを防ぐ
+    if (selectedFormat != null && !formatItems.contains(selectedFormat)) {
+      selectedFormat = null;
+    }
+    if (selectedLevel != null && !levelItems.contains(selectedLevel)) {
+      selectedLevel = null;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false, // ダイアログ外をタップしても閉じない
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('デッキの保存'),
+              content: Form(
+                key: formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      TextFormField(
+                        controller: deckNameController,
+                        decoration: const InputDecoration(labelText: 'デッキ名 *'),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'デッキ名を入力してください';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<String>(
+                        value: selectedFormat,
+                        decoration: const InputDecoration(labelText: 'フォーマット'),
+                        items:formatItems
+                            .map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            selectedFormat = newValue;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<String>(
+                        value: selectedLevel,
+                        decoration: const InputDecoration(labelText: 'レベル'),
+                        items: levelItems
+                            .map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            selectedLevel = newValue;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('キャンセル'),
+                  onPressed: () {
+                    // Providerの値を更新せずにダイアログを閉じる
+                    Navigator.of(dialogContext).pop();
+                  },
+                ),
+                ElevatedButton(
+                  child: const Text('保存'),
+                  onPressed: () async {
+                    if (formKey.currentState!.validate()) {
+                      // Providerの値を更新
+                      ref.read(buildDeckProvider.notifier).updateDeckInfo(
+                        name: deckNameController.text,
+                        format: selectedFormat,
+                        level: selectedLevel,
+                      );
+
+                      // 保存処理
+                      final success = await ref.read(buildDeckProvider.notifier).saveDeck();
+
+                      if(!context.mounted) return;
+
+                      if (success) {
+                        // 保存成功
+                        Navigator.of(context).pop(); // builder画面を閉じてdeck_listに戻る
+                        // Navigator.of(context).pop(); // builder画面を閉じてdeck_listに戻る
+                      } else {
+                        // 保存失敗
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('デッキの保存に失敗しました')),
+                        );
+                      }
+                    }
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }

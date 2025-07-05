@@ -53,10 +53,17 @@ class MyApp extends StatelessWidget {
           textTheme: const TextTheme(
             displayLarge: TextStyle(fontFamily: 'NotoSansJP'),
           )),
-      home: const BottomNavigation(),
+      // home: const BottomNavigation(),
       // supportedLocales: const [
       //   Locale('ja', 'JP'),
       // ],
+      routes: {
+        '/':(context) => const BottomNavigation(),
+        '/deck_list': (context) => const DeckListScreen(),
+        '/search': (context) => const SearchScreen(),
+        '/option': (context) => const OptionScreen(),
+        '/links': (context) => const LinksScreen(),
+      },
     );
   }
 }
