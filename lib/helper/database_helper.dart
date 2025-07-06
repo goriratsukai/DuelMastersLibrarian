@@ -100,6 +100,27 @@ class DatabaseHelper {
     });
   }
 
+  Future<List<int>> loadSingleDeckPhysicalID(String deckId) async {
+    final db = await instance.database;
+    // deck_cardテーブルから指定されたdeck_idのレコードを取得
+    final List<Map<String, dynamic>> maps = await db.query(
+      'deck_card',
+      where: 'deck_id = ?',
+      whereArgs: [deckId],
+      orderBy: 'belong_deck, deck_index', // ゾーンごと、登録順にソート
+    );
+
+    // 検索結果が空の場合は空のリストを返す
+    if (maps.isEmpty) {
+      return [];
+    }
+
+    // physical_idのリストを作成して返す
+    return List.generate(maps.length, (i) {
+      return maps[i]['physical_id'] as int;
+    });
+  }
+
   // すべてのデッキを取得する
   Future<List<Deck>> getDecks() async {
     final db = await instance.database;

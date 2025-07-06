@@ -2,6 +2,7 @@ import 'package:riverpod/riverpod.dart';
 import 'package:meta/meta.dart';
 import 'package:uuid/uuid.dart';
 
+import '../helper/cardData_helper.dart';
 import '../helper/database_helper.dart';
 import '../model/deck.dart';
 import '../source/card_data.dart';
@@ -351,6 +352,27 @@ class BuildDeckNotifier extends Notifier<DeckState> {
     } catch (e) {
       // エラーハンドリング
       print('Failed to save deck: $e');
+      return false;
+    }
+  }
+
+  // デッキを読み込む
+  Future<bool> loadSingleDeck(String deckId) async {
+    // 読み込む前にリセットする
+    resetAllDecks();
+
+    try{
+      final List<int> physicalIds = await DatabaseHelper.instance.loadSingleDeckPhysicalID(deckId);
+      print(physicalIds);
+      for(final physicalId in physicalIds){
+        print(physicalId);
+        final card = await CardDataHelper.instance.getCardDataByPhysicalId(physicalId);
+        addDeck(card);
+      }
+      return true;
+
+    }catch(e){
+      print('Failed to load deck: $e');
       return false;
     }
   }

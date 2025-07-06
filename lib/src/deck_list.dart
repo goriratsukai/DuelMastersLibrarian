@@ -82,11 +82,11 @@ class _DeckListScreenState extends ConsumerState<DeckListScreen> {
               ),
             ),
             backgroundColor: Colors.amber,
-            onTap: () => {
+            onTap: () async => {
               debugPrint('copy at'),
-              Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+               await Navigator.of(context).push(MaterialPageRoute(builder: (context) {
                 return BuildDeckScreen();
-              }))
+              })).then((_) => _loadDecks())
             }),
         SpeedDialChild(
           child: Icon(Icons.create_rounded),
@@ -100,11 +100,11 @@ class _DeckListScreenState extends ConsumerState<DeckListScreen> {
             ),
           ),
           backgroundColor: Colors.amber,
-          onTap: () => {
+          onTap: () async => {
             debugPrint('create new'),
-            Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+            await Navigator.of(context).push(MaterialPageRoute(builder: (context) {
               return BuildDeckScreen();
-            }))
+            })).then((_) => _loadDecks())
           },
         ),
       ]),

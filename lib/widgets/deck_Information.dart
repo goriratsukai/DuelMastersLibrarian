@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
+import '../SubScreen/builder.dart';
 import '../model/deck.dart';
+import '../provider/build_deck_provider.dart';
 
-class deckInfoContainer extends StatelessWidget {
+class deckInfoContainer extends ConsumerWidget {
   const deckInfoContainer({
     super.key,
     required this.deck,
@@ -13,7 +16,7 @@ class deckInfoContainer extends StatelessWidget {
   final Deck deck;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, ref) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: ListTile(
@@ -36,8 +39,11 @@ class deckInfoContainer extends StatelessWidget {
           ],
         ),
         trailing: const Icon(Icons.arrow_forward_ios),
-        onTap: () {
-          // TODO: デッキ詳細画面への遷移処理
+        onTap: () async{
+          await ref.read(buildDeckProvider.notifier).loadSingleDeck(deck.deckId);
+          await Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+            return BuildDeckScreen();
+          }));
         },
       ),
     );

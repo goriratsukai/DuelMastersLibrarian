@@ -522,7 +522,7 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> with TickerPr
     );
   }
   // 保存ダイアログを表示するメソッド
-  void _showSaveDialog(BuildContext context, WidgetRef ref) {
+  Future<void> _showSaveDialog(BuildContext context, WidgetRef ref) async{
     final formKey = GlobalKey<FormState>();
     final deckNameController = TextEditingController(text: ref.read(buildDeckProvider).deckName);
 
@@ -540,7 +540,7 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> with TickerPr
       selectedLevel = null;
     }
 
-    showDialog(
+    final bool? success = await showDialog(
       context: context,
       barrierDismissible: false, // ダイアログ外をタップしても閉じない
       builder: (BuildContext dialogContext) {
@@ -607,7 +607,7 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> with TickerPr
                   child: const Text('キャンセル'),
                   onPressed: () {
                     // Providerの値を更新せずにダイアログを閉じる
-                    Navigator.of(dialogContext).pop();
+                    Navigator.of(dialogContext).pop(false);
                   },
                 ),
                 ElevatedButton(
@@ -624,20 +624,22 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> with TickerPr
                       // 保存処理
                       final success = await ref.read(buildDeckProvider.notifier).saveDeck();
 
-                      if(!context.mounted) return;
-
                       if (success) {
                         // 保存成功
-                        Navigator.of(context).pop(); // builder画面を閉じてdeck_listに戻る
+                        // Navigator.of(context).popUntil(ModalRoute.withName('/')); // builder画面を閉じてdeck_listに戻る
+                        Navigator.of(dialogContext).pop(true);
+                        // Navigator.of(innerContext).pop();
+                        // Navigator.of(context).pop();
                         // Navigator.of(context).pop(); // builder画面を閉じてdeck_listに戻る
                       } else {
+                        Navigator.of(dialogContext).pop(false);
                         // 保存失敗
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('デッキの保存に失敗しました')),
                         );
                       }
                     }
-                  },
+            },
                 ),
               ],
             );
@@ -645,5 +647,9 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> with TickerPr
         );
       },
     );
+    // デッキを保存してダイアログを閉じたとき、デッキリストに戻る
+    if(success == true && context.mounted) {
+      Navigator.of(context).pop(true);
+    }
   }
 }
