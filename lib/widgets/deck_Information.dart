@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 import '../SubScreen/builder.dart';
+import '../helper/image_generator.dart';
 import '../model/deck.dart';
 import '../provider/build_deck_provider.dart';
 
@@ -36,6 +37,12 @@ class deckInfoContainer extends ConsumerWidget {
               '更新日: ${DateFormat('yyyy/MM/dd HH:mm').format(deck.updatedAt)}',
               style: Theme.of(context).textTheme.bodySmall,
             ),
+            IconButton(
+              onPressed:(){
+                ImageGenerator.generateAndSaveDeckImage(deck.deckId, deck.deckName);
+              },
+              icon: const Icon(Icons.share),
+            ),
           ],
         ),
         trailing: const Icon(Icons.arrow_forward_ios),
@@ -44,6 +51,10 @@ class deckInfoContainer extends ConsumerWidget {
           await Navigator.of(context).push(MaterialPageRoute(builder: (context) {
             return BuildDeckScreen();
           }));
+        },
+        onLongPress: () {
+          // 長押しで画像生成・共有機能を呼び出す
+          ImageGenerator.generateAndSaveDeckImage(deck.deckId, deck.deckName);
         },
       ),
     );

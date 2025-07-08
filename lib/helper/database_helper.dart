@@ -99,7 +99,7 @@ class DatabaseHelper {
       await batch.commit(noResult: true);
     });
   }
-
+  // デッキ読み込みようにデータをロードする関数
   Future<List<int>> loadSingleDeckPhysicalID(String deckId) async {
     final db = await instance.database;
     // deck_cardテーブルから指定されたdeck_idのレコードを取得
@@ -119,6 +119,18 @@ class DatabaseHelper {
     return List.generate(maps.length, (i) {
       return maps[i]['physical_id'] as int;
     });
+  }
+
+  // 画像出力用にデータをロードする関数
+  Future<List<Map<String, dynamic>>> getDeckCardsForImage(String deckId) async {
+    final db = await instance.database;
+    return await db.query(
+      'deck_card',
+      columns: ['image_name', 'deck_index'],
+      where: 'deck_id = ? AND belong_deck = ?',
+      whereArgs: [deckId, 0], // belong_deck=0 (メインデッキ) のみ取得
+      orderBy: 'deck_index ASC',
+    );
   }
 
   // すべてのデッキを取得する
