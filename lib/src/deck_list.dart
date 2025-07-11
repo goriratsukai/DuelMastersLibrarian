@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 
 import '../helper/database_helper.dart';
+import '../helper/image_generator.dart';
 import '../model/deck.dart';
 import '../widgets/deck_Information.dart';
 import '../SubScreen/builder.dart';
@@ -36,12 +37,17 @@ class _DeckListScreenState extends ConsumerState<DeckListScreen> {
 
   @override
   Widget build(BuildContext context) {
+
+    final isSaveDeckImage = ref.watch(isSaveDeckImageProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('デッキ一覧'),
       ),
       // FutureBuilderを使って非同期処理の結果に応じてUIを構築
-      body: FutureBuilder<List<Deck>>(
+      body:
+      Stack(children: [
+      FutureBuilder<List<Deck>>(
         future: _decksFuture,
         builder: (context, snapshot) {
           // データ取得待ち
@@ -68,6 +74,31 @@ class _DeckListScreenState extends ConsumerState<DeckListScreen> {
           );
         },
       ),
+      if(isSaveDeckImage)
+        // Expanded(child:
+          Container(
+            color: Colors.black.withOpacity(0.5),
+            alignment: Alignment.center,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Text(
+                'デッキ画像を保存中',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  shadows: [
+                    Shadow(
+                      blurRadius: 8.0,
+                      color: Colors.black.withAlpha(150),
+                      offset: const Offset(2.0, 2.0),
+                    ),
+                  ],
+                ),
+              )
+            // ),
+          ),)
+      ],),
       floatingActionButton:
       SpeedDial(animatedIcon: AnimatedIcons.menu_close, overlayColor: Colors.black, overlayOpacity: 0.7, spacing: 16, children: [
         SpeedDialChild(
@@ -84,8 +115,9 @@ class _DeckListScreenState extends ConsumerState<DeckListScreen> {
             backgroundColor: Colors.amber,
             onTap: () async => {
               debugPrint('copy at'),
-               await Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-                return BuildDeckScreen();
+              //todo デッキを選択して、loadDeckを呼び出す処理を追加
+              await Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+                return BuildDeckScreen(buildMode: 'CREATE');
               })).then((_) => _loadDecks())
             }),
         SpeedDialChild(
@@ -103,7 +135,7 @@ class _DeckListScreenState extends ConsumerState<DeckListScreen> {
           onTap: () async => {
             debugPrint('create new'),
             await Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-              return BuildDeckScreen();
+              return BuildDeckScreen(buildMode: 'CREATE');
             })).then((_) => _loadDecks())
           },
         ),
