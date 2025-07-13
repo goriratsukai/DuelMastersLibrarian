@@ -163,8 +163,10 @@ class DatabaseHelper {
     await db.transaction((txn) async{
       await txn.delete('decks', where: 'deck_id = ?', whereArgs: [deckId]);
       await txn.delete('deck_card', where: 'deck_id = ?', whereArgs: [deckId]);
-      // await txn.rawQuery('vacuum;reindex;analyze;');
     });
+    await db.execute('vacuum');
+    await db.execute('reindex');
+    await db.execute('analyze');
   }
 
   // デッキ読み込み用にカードデータをロードする関数

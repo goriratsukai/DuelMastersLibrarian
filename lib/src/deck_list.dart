@@ -69,7 +69,7 @@ class _DeckListScreenState extends ConsumerState<DeckListScreen> {
             itemCount: decks.length,
             itemBuilder: (context, index) {
               final deck = decks[index];
-              return deckInfoContainer(deck: deck); // DeckInformationにDeckオブジェクトを渡す
+              return deckInfoContainer(deck: deck, onDelete: _loadDecks); // DeckInformationにDeckオブジェクトを渡す
             },
           );
         },
