@@ -13,11 +13,9 @@ class deckInfoContainer extends ConsumerWidget {
   const deckInfoContainer({
     super.key,
     required this.deck,
-    required this.onDelete,
   });
 
   final Deck deck;
-  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context, ref) {

@@ -1,3 +1,4 @@
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:meta/meta.dart';
 import 'package:uuid/uuid.dart';
@@ -135,11 +136,23 @@ class BuildDeckNotifier extends Notifier<DeckState> {
       print('メインデッキの上限に達しました');
       return 2;
     }
-
     // デッキに入っている同じobject_idのカード枚数を数える
     final count = state.mainDeck.where((c) => c.object_id == card.object_id).length;
-    // カードが4枚未満の場合のみ追加
-    if(count < 4){
+    // 殿堂入りチェック
+    if(card.premium_fame_flag == 1){
+      // プレミアム殿堂カードは0枚まで
+      if(count >= 0){
+        Fluttertoast.showToast(msg: '殿堂ルールの上限より多くデッキに入っています\n${card.card_name}');
+      }
+    }
+    if(card.fame_flag == 1){
+      // 殿堂カードは1枚まで
+      if(count >= 1){
+        Fluttertoast.showToast(msg: '殿堂ルールの上限より多くデッキに入っています\n${card.card_name}');
+      }
+    }
+    // カードがカードごとの上限より少ないときだけ追加
+    if(count < card.max_count){
       state = state.copyWith(mainDeck: [...state.mainDeck, card]);
       // 成功したときは0を返す
       print('メインデッキにカードを追加しました');
@@ -179,9 +192,21 @@ class BuildDeckNotifier extends Notifier<DeckState> {
       print('GRデッキの上限に達しました');
       return 4;
     }
-
     final count = state.grDeck.where((c) => c.object_id == card.object_id).length;
-    if(count < 2){
+    // 殿堂入りチェック
+    if(card.premium_fame_flag == 1){
+      // プレミアム殿堂カードは0枚まで
+      if(count >= 0){
+        Fluttertoast.showToast(msg: '殿堂ルールの上限より多くデッキに入っています\n${card.card_name}');
+      }
+    }
+    if(card.fame_flag == 1){
+      // 殿堂カードは1枚まで
+      if(count >= 1){
+        Fluttertoast.showToast(msg: '殿堂ルールの上限より多くデッキに入っています\n${card.card_name}');
+      }
+    }
+    if(count < card.max_count){
       state = state.copyWith(grDeck: [...state.grDeck, card]);
       print('GRデッキにカードを追加しました');
       return 0;
@@ -220,7 +245,20 @@ class BuildDeckNotifier extends Notifier<DeckState> {
       return 5;
     }
     final count = state.uberDimensionDeck.where((c) => c.object_id == card.object_id).length;
-    if(count < 4){
+    // 殿堂入りチェック
+    if(card.premium_fame_flag == 1){
+      // プレミアム殿堂カードは0枚まで
+      if(count >= 0){
+        Fluttertoast.showToast(msg: '殿堂ルールの上限より多くデッキに入っています\n${card.card_name}');
+      }
+    }
+    if(card.fame_flag == 1){
+      // 殿堂カードは1枚まで
+      if(count >= 1){
+        Fluttertoast.showToast(msg: '殿堂ルールの上限より多くデッキに入っています\n${card.card_name}');
+      }
+    }
+    if(count < card.max_count){
       state = state.copyWith(uberDimensionDeck: [...state.uberDimensionDeck, card]);
       print('超次元デッキにカードを追加しました');
       return 0;
