@@ -14,7 +14,9 @@ double deviceWidth = 0.0;
 
 // ConsumerStatefulWidget に変更
 class BuildDeckScreen extends ConsumerStatefulWidget {
-  BuildDeckScreen({super.key});
+  BuildDeckScreen({super.key,required this.buildMode});
+
+  final String buildMode;
 
   @override
   ConsumerState<BuildDeckScreen> createState() => _BuildDeckScreenState();
@@ -66,7 +68,7 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> with TickerPr
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('デッキ作る画面'),
+        title: widget.buildMode == 'EDIT'? const Text('デッキ編集') : const Text('新規デッキ作成'),
         leading: IconButton(onPressed: () => {Navigator.pop(context)}, icon: const Icon(Icons.arrow_back)),
         actions: [
           IconButton(
@@ -105,7 +107,9 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> with TickerPr
                     });
               },
               icon: const Icon(Icons.delete_rounded)),
-          IconButton(onPressed: () => {_showSaveDialog(context, ref)}, icon: const Icon(Icons.save_rounded)),
+          IconButton(
+              onPressed: () => {_showSaveDialog(context, ref, buildMode: widget.buildMode)},
+              icon: const Icon(Icons.save_rounded)),
         ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
@@ -505,9 +509,9 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> with TickerPr
             return GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: buildDeck.begining.length,
+                itemCount: buildDeck.beginning.length,
                 itemBuilder: (context, index) {
-                  final card = buildDeck.begining[index];
+                  final card = buildDeck.beginning[index];
                   final cardWidget = DeletableCardContainer(searchedCard: card, index: index, isReorderMode: _isReorderMode);
                   Widget item = cardWidget;
                   return KeyedSubtree(key: ValueKey(card.physical_id + index), child: item);
@@ -522,7 +526,7 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> with TickerPr
     );
   }
   // 保存ダイアログを表示するメソッド
-  Future<void> _showSaveDialog(BuildContext context, WidgetRef ref) async{
+  Future<void> _showSaveDialog(BuildContext context, WidgetRef ref, {required buildMode}) async{
     final formKey = GlobalKey<FormState>();
     final deckNameController = TextEditingController(text: ref.read(buildDeckProvider).deckName);
 
@@ -621,16 +625,17 @@ class _BuildDeckScreenState extends ConsumerState<BuildDeckScreen> with TickerPr
                         level: selectedLevel,
                       );
 
+                      late bool success;
                       // 保存処理
-                      final success = await ref.read(buildDeckProvider.notifier).saveDeck();
+                      if(buildMode == 'CREATE') {
+                        success = await ref.read(buildDeckProvider.notifier).saveDeck();
+                      }else if(buildMode == 'EDIT'){
+                        success = await ref.read(buildDeckProvider.notifier).updateDeck();
+                      }
 
                       if (success) {
                         // 保存成功
-                        // Navigator.of(context).popUntil(ModalRoute.withName('/')); // builder画面を閉じてdeck_listに戻る
                         Navigator.of(dialogContext).pop(true);
-                        // Navigator.of(innerContext).pop();
-                        // Navigator.of(context).pop();
-                        // Navigator.of(context).pop(); // builder画面を閉じてdeck_listに戻る
                       } else {
                         Navigator.of(dialogContext).pop(false);
                         // 保存失敗

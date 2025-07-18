@@ -38,7 +38,8 @@ class CardDataHelper{
     final db = await instance.database;
     final List<Map<String, dynamic>> card_data = await db.rawQuery(
       '''
-      select co.object_id object_id, cm.card_name card_name, cp.image_name image_name, co.belong_deck belong_deck, cp.physical_id physical_id
+      select co.object_id object_id, cm.card_name card_name, cp.image_name image_name, co.belong_deck belong_deck, cp.physical_id physical_id,
+      co.max_count max_count, co.premium_fame_flag premium_fame_flag, co.fame_flag fame_flag, co.combination_fame_group combination_fame_group
       from card_physical cp
       join card_object co
         on cp.object_id = co.object_id
@@ -55,6 +56,10 @@ class CardDataHelper{
         image_name: card_data[0]['image_name'],
         belong_deck: card_data[0]['belong_deck'],
         physical_id: card_data[0]['physical_id'],
+        max_count: card_data[0]['max_count'],
+        premium_fame_flag: card_data[0]['premium_fame_flag'],
+        fame_flag: card_data[0]['fame_flag'],
+        combination_fame_group: card_data[0]['combination_fame_group'],
       );
   }
 

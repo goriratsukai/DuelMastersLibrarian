@@ -27,6 +27,10 @@ class SearchResultsNotifier extends AsyncNotifier<List<SearchCard>> {
         image_name: queryResults[i]['image_name'],
         belong_deck: queryResults[i]['belong_deck'],
         physical_id: queryResults[i]['physical_id'],
+        max_count: queryResults[i]['max_count'],
+        premium_fame_flag: queryResults[i]['premium_fame_flag'],
+        fame_flag: queryResults[i]['fame_flag'],
+        combination_fame_group: queryResults[i]['combination_fame_group'],
       );
     });
   }

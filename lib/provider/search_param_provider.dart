@@ -294,8 +294,10 @@ class SearchParamNotifier extends Notifier<SearchParamState> {
   String getQuery() {
     String query = '''
       select card.object_id object_id, card.card_name card_name, card.belong_deck belong_deck, cp.image_name image_name, cp.physical_id physical_id
+      , card.max_count max_count, card.premium_fame_flag premium_fame_flag, card.fame_flag fame_flag, card.combination_fame_group combination_fame_group
       from (
-        select co.object_id object_id, card_name, cm.cost cost, cm.power power, co.belong_deck belong_deck
+        select co.object_id object_id, card_name, cm.cost cost, cm.power power, co.belong_deck belong_deck,
+        co.max_count max_count, co.premium_fame_flag premium_fame_flag, co.fame_flag fame_flag, co.combination_fame_group combination_fame_group
         from card_module cm
         
         join link_object_module lom

@@ -1,3 +1,4 @@
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:meta/meta.dart';
 import 'package:uuid/uuid.dart';
@@ -12,47 +13,55 @@ enum DeckType {
   main,
   gr,
   uberDimension,
-  begining,
+  beginning,
 }
 
 // 3つのデッキ（メイン、GR、超次元）の状態を管理するクラス
 @immutable
 class DeckState {
   const DeckState({
+    this.deckID = '',
     this.mainDeck = const [],
     this.grDeck = const [],
     this.uberDimensionDeck = const [],
-    this.begining = const[],
+    this.beginning = const[],
     this.deckName = '',
     this.deckFormat = '',
     this.deckLevel = '',
+    this.createdAt = ''
   });
 
+  final String deckID;
   final List<SearchCard> mainDeck;
   final List<SearchCard> grDeck;
   final List<SearchCard> uberDimensionDeck;
-  final List<SearchCard> begining;
+  final List<SearchCard> beginning;
   final String deckName;
   final String deckFormat;
   final String deckLevel;
+  final String createdAt;
 
   DeckState copyWith({
+    String? deckID,
     List<SearchCard>? mainDeck,
     List<SearchCard>? grDeck,
     List<SearchCard>? uberDimensionDeck,
-    List<SearchCard>? begining,
+    List<SearchCard>? beginning,
     String? deckName,
     String? deckFormat,
     String? deckLevel,
+    String? createdAt,
   }) {
     return DeckState(
+      deckID: deckID ?? this.deckID,
       mainDeck: mainDeck ?? this.mainDeck,
       grDeck: grDeck ?? this.grDeck,
       uberDimensionDeck: uberDimensionDeck ?? this.uberDimensionDeck,
-      begining: begining ?? this.begining,
+      beginning: beginning ?? this.beginning,
       deckName: deckName ?? this.deckName,
       deckFormat: deckFormat ?? this.deckFormat,
       deckLevel: deckLevel ?? this.deckLevel,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 }
@@ -78,7 +87,7 @@ class BuildDeckNotifier extends Notifier<DeckState> {
       case 2:
         return state.grDeck[index];
       case 3:
-        return state.begining[index];
+        return state.beginning[index];
     }
     throw Exception('Invalid belong_deck value: ${card.belong_deck}');
   }
@@ -127,11 +136,23 @@ class BuildDeckNotifier extends Notifier<DeckState> {
       print('メインデッキの上限に達しました');
       return 2;
     }
-
     // デッキに入っている同じobject_idのカード枚数を数える
     final count = state.mainDeck.where((c) => c.object_id == card.object_id).length;
-    // カードが4枚未満の場合のみ追加
-    if(count < 4){
+    // 殿堂入りチェック
+    if(card.premium_fame_flag == 1){
+      // プレミアム殿堂カードは0枚まで
+      if(count >= 0){
+        Fluttertoast.showToast(msg: '殿堂ルールの上限より多くデッキに入っています\n${card.card_name}');
+      }
+    }
+    if(card.fame_flag == 1){
+      // 殿堂カードは1枚まで
+      if(count >= 1){
+        Fluttertoast.showToast(msg: '殿堂ルールの上限より多くデッキに入っています\n${card.card_name}');
+      }
+    }
+    // カードがカードごとの上限より少ないときだけ追加
+    if(count < card.max_count){
       state = state.copyWith(mainDeck: [...state.mainDeck, card]);
       // 成功したときは0を返す
       print('メインデッキにカードを追加しました');
@@ -171,9 +192,21 @@ class BuildDeckNotifier extends Notifier<DeckState> {
       print('GRデッキの上限に達しました');
       return 4;
     }
-
     final count = state.grDeck.where((c) => c.object_id == card.object_id).length;
-    if(count < 2){
+    // 殿堂入りチェック
+    if(card.premium_fame_flag == 1){
+      // プレミアム殿堂カードは0枚まで
+      if(count >= 0){
+        Fluttertoast.showToast(msg: '殿堂ルールの上限より多くデッキに入っています\n${card.card_name}');
+      }
+    }
+    if(card.fame_flag == 1){
+      // 殿堂カードは1枚まで
+      if(count >= 1){
+        Fluttertoast.showToast(msg: '殿堂ルールの上限より多くデッキに入っています\n${card.card_name}');
+      }
+    }
+    if(count < card.max_count){
       state = state.copyWith(grDeck: [...state.grDeck, card]);
       print('GRデッキにカードを追加しました');
       return 0;
@@ -212,7 +245,20 @@ class BuildDeckNotifier extends Notifier<DeckState> {
       return 5;
     }
     final count = state.uberDimensionDeck.where((c) => c.object_id == card.object_id).length;
-    if(count < 4){
+    // 殿堂入りチェック
+    if(card.premium_fame_flag == 1){
+      // プレミアム殿堂カードは0枚まで
+      if(count >= 0){
+        Fluttertoast.showToast(msg: '殿堂ルールの上限より多くデッキに入っています\n${card.card_name}');
+      }
+    }
+    if(card.fame_flag == 1){
+      // 殿堂カードは1枚まで
+      if(count >= 1){
+        Fluttertoast.showToast(msg: '殿堂ルールの上限より多くデッキに入っています\n${card.card_name}');
+      }
+    }
+    if(count < card.max_count){
       state = state.copyWith(uberDimensionDeck: [...state.uberDimensionDeck, card]);
       print('超次元デッキにカードを追加しました');
       return 0;
@@ -245,23 +291,23 @@ class BuildDeckNotifier extends Notifier<DeckState> {
   /// 戻り値: 0 = 成功, 6 = 1枚制限
   int addBeginingDeck(SearchCard card){
     // 上限は1枚
-    if(state.begining.length >= 1){
+    if(state.beginning.length >= 1){
       return 1;
     }
-    state = state.copyWith(begining: [...state.begining, card]);
+    state = state.copyWith(beginning: [...state.beginning, card]);
     return 0;
   }
 
   /// カードを削除する
   void removeBeginingDeck(int index){
-    final newList = List<SearchCard>.from(state.begining);
+    final newList = List<SearchCard>.from(state.beginning);
     newList.removeAt(index);
-    state = state.copyWith(begining: newList);
+    state = state.copyWith(beginning: newList);
   }
 
   /// リセットする
   void resetBeginingDeck(){
-    state = state.copyWith(begining: []);
+    state = state.copyWith(beginning: []);
   }
 
 
@@ -286,7 +332,7 @@ class BuildDeckNotifier extends Notifier<DeckState> {
       case DeckType.uberDimension:
         targetDeck = state.uberDimensionDeck;
         break;
-      case DeckType.begining:
+      case DeckType.beginning:
         return;
     }
     // インデックスの範囲チェック
@@ -309,7 +355,7 @@ class BuildDeckNotifier extends Notifier<DeckState> {
       case DeckType.uberDimension:
         state = state.copyWith(uberDimensionDeck: newList);
         break;
-      case DeckType.begining:
+      case DeckType.beginning:
         return;
     }
   }
@@ -356,10 +402,60 @@ class BuildDeckNotifier extends Notifier<DeckState> {
     }
   }
 
+  // 既存デッキ更新
+  Future<bool> updateDeck() async {
+    try {
+      final now = DateTime.now();
+      final newDeck = Deck(
+        deckId: state.deckID,
+        deckName: state.deckName,
+        deckFormat: state.deckFormat,
+        deckLevel: state.deckLevel,
+        deckCountMain: state.mainDeck.length,
+        deckCountGr: state.grDeck.length,
+        deckCountUb: state.uberDimensionDeck.length,
+        createdAt: DateTime.parse(state.createdAt),
+        updatedAt: now,
+      );
+
+      await DatabaseHelper.instance.updateDeckTransaction(
+        newDeck,
+        state.mainDeck,
+        state.grDeck,
+        state.uberDimensionDeck,
+      );
+      // 保存成功後にstateを初期化
+      state = const DeckState(mainDeck: [], grDeck: [], uberDimensionDeck: []);
+      return true;
+    } catch (e) {
+      // エラーハンドリング
+      print('Failed to save deck: $e');
+      return false;
+    }
+
+  }
+
   // デッキを読み込む
   Future<bool> loadSingleDeck(String deckId) async {
     // 読み込む前にリセットする
     resetAllDecks();
+    try{
+      final List<Map<String, dynamic>> deckInfo = await DatabaseHelper.instance.loadSingleDeckInfo(deckId);
+      if(deckInfo.isEmpty){
+        return false;
+      }
+      final deck = Deck.fromMap(deckInfo[0]);
+      state = state.copyWith(
+        deckID: deck.deckId,
+        deckName: deck.deckName,
+        deckFormat: deck.deckFormat,
+        deckLevel: deck.deckLevel,
+        createdAt: deck.createdAt.toString(),
+      );
+    }catch(e){
+      print('Failed to load deck: $e');
+      return false;
+    }
 
     try{
       final List<int> physicalIds = await DatabaseHelper.instance.loadSingleDeckPhysicalID(deckId);

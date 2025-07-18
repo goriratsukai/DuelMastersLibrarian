@@ -100,6 +100,76 @@ class DatabaseHelper {
     });
   }
 
+  // デッキを編集する（トランザクション処理）
+  Future<void> updateDeckTransaction(Deck newDeck, List<SearchCard> mainDeck, List<SearchCard> grDeck, List<SearchCard> uberDimensionDeck) async {
+    final db = await instance.database;
+    await db.transaction((txn) async {
+      // decksテーブルの更新
+      await txn.update('decks', newDeck.toMap(), where: 'deck_id = ?', whereArgs: [newDeck.deckId]);
+
+      // deck_cardテーブルを一旦削除する
+      await txn.delete('deck_card', where: 'deck_id = ?', whereArgs: [newDeck.deckId]);
+
+      // deck_cardテーブルに再度挿入
+      final batch = txn.batch();
+
+      // メインデッキ
+      for (int i = 0; i < mainDeck.length; i++) {
+        batch.insert('deck_card', {
+          'deck_id': newDeck.deckId,
+          'belong_deck': 0, // mainDeck
+          'deck_index': i,
+          'physical_id': mainDeck[i].physical_id,
+          'image_name': mainDeck[i].image_name,
+        });
+      }
+      // GRデッキ
+      for (int i = 0; i < grDeck.length; i++) {
+        batch.insert('deck_card', {
+          'deck_id': newDeck.deckId,
+          'belong_deck': 1, // GrDeck
+          'deck_index': i,
+          'physical_id': grDeck[i].physical_id,
+          'image_name': grDeck[i].image_name,
+        });
+      }
+      // 超次元ゾーン
+      for (int i = 0; i < uberDimensionDeck.length; i++) {
+        batch.insert('deck_card', {
+          'deck_id': newDeck.deckId,
+          'belong_deck': 2, // UberDimensionDeck
+          'deck_index': i,
+          'physical_id': uberDimensionDeck[i].physical_id,
+          'image_name': uberDimensionDeck[i].image_name,
+        });
+      }
+      await batch.commit(noResult: true);
+    });
+  }
+
+  // デッキ読み込み用にデッキデータをロードする関数
+  Future<List<Map<String, dynamic>>> loadSingleDeckInfo(String deckId) async {
+    final db = await instance.database;
+    return await db.query(
+      'decks',
+      where: 'deck_id = ?',
+      whereArgs: [deckId],
+    );
+  }
+
+  // デッキを削除する
+  Future<void> deleteDeck(String deckId) async {
+    final db = await instance.database;
+    await db.transaction((txn) async{
+      await txn.delete('decks', where: 'deck_id = ?', whereArgs: [deckId]);
+      await txn.delete('deck_card', where: 'deck_id = ?', whereArgs: [deckId]);
+    });
+    await db.execute('vacuum');
+    await db.execute('reindex');
+    await db.execute('analyze');
+  }
+
+  // デッキ読み込み用にカードデータをロードする関数
   Future<List<int>> loadSingleDeckPhysicalID(String deckId) async {
     final db = await instance.database;
     // deck_cardテーブルから指定されたdeck_idのレコードを取得
@@ -121,7 +191,19 @@ class DatabaseHelper {
     });
   }
 
-  // すべてのデッキを取得する
+  // 画像出力用にデータをロードする関数
+  Future<List<Map<String, dynamic>>> getDeckCardsForImage(String deckId) async {
+    final db = await instance.database;
+    return await db.query(
+      'deck_card',
+      columns: ['image_name', 'deck_index'],
+      where: 'deck_id = ? AND belong_deck = ?',
+      whereArgs: [deckId, 0], // belong_deck=0 (メインデッキ) のみ取得
+      orderBy: 'deck_index ASC',
+    );
+  }
+
+  // すべてのデッキヘッダー情報を取得する
   Future<List<Deck>> getDecks() async {
     final db = await instance.database;
     final List<Map<String, dynamic>> maps = await db.query('decks', orderBy: 'updatedAt DESC');
